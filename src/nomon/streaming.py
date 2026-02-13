@@ -224,12 +224,12 @@ class StreamServer:
         def generate():
             """Generator that yields MJPEG boundary data."""
             try:
-                for frame in self.camera.get_frame_generator():
+                for jpeg_frame in self.camera.get_jpeg_frame_generator():
                     # Wrap each frame in MJPEG boundary
                     boundary = b"--frame"
                     content_type = b"Content-Type: image/jpeg"
                     content_length = b"Content-Length: " + str(
-                        len(frame)
+                        len(jpeg_frame)
                     ).encode()
                     crlf = b"\r\n"
 
@@ -237,7 +237,7 @@ class StreamServer:
                     yield content_type + crlf
                     yield content_length + crlf
                     yield crlf
-                    yield frame
+                    yield jpeg_frame
                     yield crlf
             except GeneratorExit:
                 # Client disconnected, clean up

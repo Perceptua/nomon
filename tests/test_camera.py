@@ -342,3 +342,63 @@ class TestFrameGenerator:
 
         with pytest.raises(RuntimeError):
             next(camera.get_frame_generator())
+
+class TestJPEGFrameGenerator:
+    """Tests for JPEG frame streaming functionality."""
+
+    @patch("nomon.camera.Picamera2")
+    def test_jpeg_frame_generator_initialization(
+        self,
+        mock_picamera2,
+    ):
+        """Test that JPEG generator initializes camera."""
+        mock_cam = MagicMock()
+        mock_picamera2.return_value = mock_cam
+        mock_cam.create_still_configuration.return_value = {}
+
+        # Mock capture_file to write JPEG data to buffer
+        def mock_capture(buffer, format=None):
+            buffer.write(b"\xff\xd8\xff\xe0")  # JPEG SOI+APP0 marker
+
+        mock_cam.capture_file.side_effect = mock_capture
+
+        camera = Camera()
+        gen = camera.get_jpeg_frame_generator()
+
+        # Get first frame
+        frame = next(gen)
+
+        assert isinstance(frame, bytes)
+        assert len(frame) > 0
+        mock_cam.start.assert_called()
+        mock_cam.create_still_configuration.assert_called()
+
+    @patch("nomon.camera.Picamera2")
+    def test_jpeg_frame_generator_not_initialized(
+        self,
+        mock_picamera2,
+    ):
+        """Test JPEG generator when camera not initialized."""
+        mock_picamera2.return_value = MagicMock()
+        camera = Camera()
+        camera._camera = None
+
+        with pytest.raises(RuntimeError):
+            next(camera.get_jpeg_frame_generator())
+
+    @patch("nomon.camera.Picamera2")
+    def test_jpeg_frame_generator_error_handling(
+        self,
+        mock_picamera2,
+    ):
+        """Test JPEG generator error handling."""
+        mock_cam = MagicMock()
+        mock_picamera2.return_value = mock_cam
+        mock_cam.create_still_configuration.return_value = {}
+        mock_cam.capture_file.side_effect = IOError("Capture failed")
+
+        camera = Camera()
+        gen = camera.get_jpeg_frame_generator()
+
+        with pytest.raises(RuntimeError, match="JPEG streaming failed"):
+            next(gen)
