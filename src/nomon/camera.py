@@ -308,7 +308,7 @@ class Camera:
         Yields
         ------
         bytes
-            JPEG-encoded frame data
+            Raw frame data from the camera buffer
 
         Raises
         ------
@@ -319,8 +319,11 @@ class Camera:
         Notes
         -----
         This generator runs indefinitely. Use in a
-        loop and break when done. Frames are
-        JPEG-encoded for network streaming.
+        loop and break when done. Frames are raw
+        image data (not JPEG-encoded).
+
+        For MJPEG streaming, use get_jpeg_frame_generator()
+        instead, which yields JPEG-encoded frames.
         """
         if self._camera is None:
             raise RuntimeError("Camera not initialized")
@@ -341,6 +344,57 @@ class Camera:
         except Exception as e:
             raise RuntimeError(
                 f"Streaming failed: {e}"
+            )
+        finally:
+            if self._camera:
+                self._camera.stop()
+
+    def get_jpeg_frame_generator(self):
+        """Get a generator that yields JPEG-encoded frames.
+
+        This is optimized for MJPEG streaming over HTTP.
+        Each frame is a complete JPEG image that can be
+        transmitted directly.
+
+        Yields
+        ------
+        bytes
+            JPEG-encoded frame data
+
+        Raises
+        ------
+        RuntimeError
+            If camera is not initialized or
+            streaming fails
+
+        Notes
+        -----
+        This generator runs indefinitely. Use in a
+        loop and break when done. Each frame is a
+        valid JPEG image suitable for MJPEG streams.
+        """
+        import io
+
+        if self._camera is None:
+            raise RuntimeError("Camera not initialized")
+
+        try:
+            config = self._camera.create_still_configuration(
+                main={"size": (self.width, self.height)}
+            )
+            self._camera.configure(config)
+            self._camera.start()
+
+            while True:
+                # Capture still image to BytesIO buffer
+                buffer = io.BytesIO()
+                self._camera.capture_file(buffer, format="jpeg")
+                jpeg_data = buffer.getvalue()
+                yield jpeg_data
+
+        except Exception as e:
+            raise RuntimeError(
+                f"JPEG streaming failed: {e}"
             )
         finally:
             if self._camera:
