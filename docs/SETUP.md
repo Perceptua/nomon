@@ -157,12 +157,81 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
   - Cross-platform (development on Windows/Mac, production on RPi)
   - Optional dependency keeps nomon lightweight for users who don't need streaming
 
-### Phase 2: Remote Microcontroller Operations (Next)
-- Communication protocol design (HTTP, WebSocket, MQTT, etc.)
-- Secure credential management
-- Error handling for network reliability
+### Phase 2: Remote Microcontroller Operations ✅ COMPLETE
 
-### Phase 3: HAT Control & Peripherals (Future)
+**Communication Protocol Implementation** (`src/nomon/protocol.py`, `src/nomon/server.py`, `src/nomon/client.py`)
+
+**Protocol Design**
+- ✅ JSON-based message protocol (newline-delimited)
+- ✅ Three message types: CommandMessage, ResponseMessage, NotificationMessage
+- ✅ UUID-based request/response matching
+- ✅ Cross-platform compatibility (Windows, Linux, macOS)
+- ✅ No external network library dependencies (uses stdlib `socket`)
+
+**Server Implementation** (`CommandServer`)
+- ✅ TCP server listening on port 5555 (configurable)
+- ✅ Supports blocking (`start()`) and background mode (`start_background()`)
+- ✅ Command execution: capture_image, start_recording, stop_recording, get_status
+- ✅ Status reporting: camera configuration, recording state
+- ✅ Error handling with detailed error messages
+- ✅ Thread-safe client connection handling
+- ✅ Graceful shutdown and resource cleanup
+
+**Client Implementation** (`CameraClient`)
+- ✅ High-level API: `capture_image()`, `start_recording()`, `stop_recording()`, `get_status()`
+- ✅ Automatic message serialization and parsing
+- ✅ Connection management with timeout support
+- ✅ Context manager support (`with` statement)
+- ✅ Error propagation with readable error messages
+- ✅ Windows PC compatibility (fully testable without hardware)
+
+**Message Serialization** (`MessageHandler`)
+- ✅ JSON encoding/decoding with validation
+- ✅ Message type detection and routing
+- ✅ Round-trip serialization (serialize → parse → serialize)
+- ✅ Comprehensive error messages for invalid messages
+
+**Test Coverage** (45 tests, 51% overall coverage)
+- Protocol Message Tests (27 tests)
+  - Command, Response, and Notification message creation
+  - Serialization and deserialization
+  - Round-trip encoding verification
+  - Error handling for malformed JSON/messages
+  - Message validation and type checking
+- Server Tests (9 tests)
+  - Command execution for all supported operations
+  - Missing parameter detection
+  - Exception handling
+  - Status reporting with correct camera info
+- Client Tests (9 tests)
+  - Connection success and failure
+  - Command sending and response parsing
+  - Error response propagation
+  - Context manager lifecycle
+  - Timeout handling
+  - All high-level methods (capture, recording, status)
+
+**Testing on Windows PC**
+- ✅ All tests run on Windows without Raspberry Pi hardware
+- ✅ picamera2 mocked at module import
+- ✅ Socket communication mocked for client/server tests
+- ✅ Can be extended with real network tests once Pi is online
+
+**Documentation**
+- ✅ PHASE2_COMMUNICATION.md - Complete protocol specification
+- ✅ Usage examples for client and server
+- ✅ Deployment checklist
+- ✅ Troubleshooting guide
+- ✅ Future enhancement ideas
+
+### Phase 3: HTTP REST API & Authentication (Next)
+- HTTP REST wrapper around Phase 2 protocol
+- TLS/SSL encryption
+- JWT token or API key authentication
+- CORS support for web and mobile clients
+- Mobile app ready
+
+### Phase 4: HAT Control & Peripherals (Future)
 - Identify specific HAT module(s)
 - Implement driver/interface layers
 - Sensor integration and actuator control
@@ -233,7 +302,74 @@ thread = server.start_background()
 server.close()  # Clean up when done
 ```
 
-### Development Environment
+### Using Remote Camera Control (Phase 2)
+
+**On Raspberry Pi (Server)**
+```python
+from nomon.server import CommandServer
+
+# Start command server listening for client requests
+server = CommandServer(
+    host="0.0.0.0",  # Accept connections from any IP
+    port=5555,       # Default port
+    width=1280,
+    height=720,
+    fps=30,
+    encoder="h264"
+)
+
+# Block and listen for client commands
+server.start()
+
+# Or run in background
+# server.start_background()
+# ... other work ...
+# server.close()
+```
+
+**On Windows PC (Client)**
+```python
+from nomon import CameraClient
+
+# Connect to the Raspberry Pi server
+client = CameraClient("192.168.1.100", port=5555)
+client.connect()
+
+# Send commands and get responses
+try:
+    # Capture an image
+    result = client.capture_image("photo.jpg")
+    print(f"Captured: {result['filename']}")
+    
+    # Record a video
+    client.start_recording("video.h264")
+    # ... recording for a while ...
+    client.stop_recording()
+    
+    # Check camera status
+    status = client.get_status()
+    print(f"Recording: {status['is_recording']}")
+    
+except RuntimeError as e:
+    print(f"Camera error: {e}")
+finally:
+    client.close()
+```
+
+**Using Context Manager (Recommended)**
+```python
+from nomon import CameraClient
+
+# Automatic connection and cleanup
+with CameraClient("192.168.1.100") as client:
+    client.capture_image("snap.jpg")
+    client.start_recording("video.h264")
+    # ... do other work ...
+    client.stop_recording()
+    # Automatically closes on exit
+```
+
+
 ```bash
 # Install with dev dependencies (no web streaming)
 uv add . --dev
