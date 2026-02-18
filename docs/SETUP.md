@@ -5,11 +5,31 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 
 ---
 
+## Project Architecture
+
+### Remote Devices
+- **Raspberry Pi Microcontrollers with HAT** - A small fleet of independent automatons
+  - Python >= 3.9 support
+  - Runs nomon app (HTTPS REST w/ secure authentication)
+  - Telemetry published via MQTT
+  - OTA updates
+  - Admin via Tailscale & SSH
+
+### User Mobile Application
+- To be developed elsewhere
+
+### Centralized Device Management
+- **Python web server**
+  - MQTT broker for telemetry logging & notifications
+  - API endpoint for version manifest
+  - Object storage via s3 for release artifacts
+
+
 ## ✅ Setup Completed
 
 ### Core Configuration Files
 - **pyproject.toml** - Complete project metadata, dependencies, and tool configurations
-  - Python >= 3.8 support
+  - Python >= 3.9 support
   - Configured for setuptools build system
   - Tool configs for black, ruff, mypy, pytest
 
@@ -157,10 +177,12 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
   - Cross-platform (development on Windows/Mac, production on RPi)
   - Optional dependency keeps nomon lightweight for users who don't need streaming
 
-### Phase 2: Remote Microcontroller Operations (Next)
-- Communication protocol design (HTTP, WebSocket, MQTT, etc.)
-- Secure credential management
-- Error handling for network reliability
+### Phase 2: HTTP REST API & Authentication (Next)
+- HTTPS REST endpoints for camera control
+- TLS/SSL encryption
+- JWT token or API key authentication
+- CORS support for web and mobile clients
+- Mobile app ready
 
 ### Phase 3: HAT Control & Peripherals (Future)
 - Identify specific HAT module(s)
@@ -257,6 +279,8 @@ make test           # Run with coverage report
 pytest tests/ -v    # Verbose test output
 ```
 
+**Note:** Tests requiring hardware (camera, GPIO) should be run on the Raspberry Pi. Tests for protocol modules can run anywhere. Hardware-dependent tests will be skipped on systems without required dependencies.
+
 ### Code Quality
 ```bash
 make format         # Format code with black & ruff
@@ -273,7 +297,7 @@ spidev and picamera2 will automatically install when dependencies are installed 
 
 **Keep this codebase minimal.** Let the standard library and imported packages do the heavy lifting. This repo should be focused on **interacting with a microcontroller & peripherals** rather than defining broad patterns for such interactions.
 
-- Cross-platform development: Code works on Windows/Mac for testing, hardware-ready on RPi
+- **Testing strategy:** Run tests on the Raspberry Pi where hardware is required. Transport-agnostic modules (like protocol) can run anywhere.
 - All tool configurations (black, ruff, mypy) are pre-configured in pyproject.toml
 - Test infrastructure ready for unit and integration tests
 - Security is built-in: filename validation prevents path traversal and directory escape attacks
