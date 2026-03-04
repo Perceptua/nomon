@@ -300,7 +300,7 @@ def test_start_background_returns_thread(mock_mqtt_module, monkeypatch):
     from nomon.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost", interval=999.0)
-    
+
     # Prevent _run_loop from doing real work
     def idle_loop() -> None:
         pub._stop_event.wait()

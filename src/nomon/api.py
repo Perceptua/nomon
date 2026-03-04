@@ -119,12 +119,13 @@ def create_self_signed_cert(cert_path: Path, key_path: Path) -> None:
         If cryptography package is not installed
     """
     try:
+        from ipaddress import IPv4Address
+
         from cryptography import x509
         from cryptography.hazmat.backends import default_backend
         from cryptography.hazmat.primitives import hashes, serialization
         from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.x509.oid import NameOID
-        from ipaddress import IPv4Address
     except ImportError as e:
         raise ImportError(
             "cryptography package required for certificate generation. "
