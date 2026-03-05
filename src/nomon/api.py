@@ -21,6 +21,7 @@ create_self_signed_cert
 import asyncio
 import logging
 import os
+import threading
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -35,10 +36,23 @@ from nomon.camera import Camera
 
 try:
     from nomon.updater import UpdateManager
+    from nomon.updater import _detect_repo_dir as _detect_repo_dir_for_api
 except ImportError:
     UpdateManager = None  # type: ignore
 
+    def _detect_repo_dir_for_api() -> Path:  # type: ignore[misc]
+        """Return the nomon git repository root (fallback when updater is unavailable)."""
+        candidate = Path(__file__).resolve().parent
+        # Walk up to 6 levels to cover typical install layouts (src/nomon → project root)
+        for _ in range(6):
+            if (candidate / ".git").is_dir():
+                return candidate
+            candidate = candidate.parent
+        return Path(__file__).resolve().parent.parent.parent
+
 logger = logging.getLogger(__name__)
+
+_UPDATER_THREAD_SHUTDOWN_TIMEOUT: float = 5.0  # seconds to wait for background thread to exit
 
 # ============================================================================
 # Data Models
@@ -234,18 +248,9 @@ def create_self_signed_cert(cert_path: Path, key_path: Path) -> None:
 # ============================================================================
 
 
-def _detect_repo_dir_for_api() -> Path:
-    """Return the nomon git repository root (used by version endpoint)."""
-    candidate = Path(__file__).resolve().parent
-    for _ in range(6):
-        if (candidate / ".git").is_dir():
-            return candidate
-        candidate = candidate.parent
-    return Path(__file__).resolve().parent.parent.parent
-
-
 _camera: Optional[Camera] = None
 _updater: Optional[Any] = None  # UpdateManager instance, when configured
+_updater_thread: Optional[threading.Thread] = None  # background polling thread
 
 
 logger = logging.getLogger(__name__)
@@ -254,7 +259,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage camera and updater initialization and cleanup."""
-    global _camera, _updater
+    global _camera, _updater, _updater_thread
     # Startup: Initialize camera
     try:
         _camera = Camera()
@@ -265,7 +270,7 @@ async def lifespan(app: FastAPI):
     if UpdateManager is not None and os.environ.get("NOMON_UPDATE_MANIFEST_URL", "").strip():
         try:
             _updater = UpdateManager.from_env(camera=_camera)
-            _updater.start_background()
+            _updater_thread = _updater.start_background()
             logger.info("Update manager started.")
         except Exception as exc:
             logger.warning("Update manager initialization failed: %s", exc)
@@ -277,6 +282,8 @@ async def lifespan(app: FastAPI):
         _camera.close()
     if _updater:
         _updater.stop()
+        if _updater_thread is not None:
+            _updater_thread.join(timeout=_UPDATER_THREAD_SHUTDOWN_TIMEOUT)
 
 
 # ============================================================================
@@ -463,9 +470,14 @@ def create_app() -> FastAPI:
             Version string, git HEAD hash, and UTC timestamp.
         """
         from nomon import __version__
-        from nomon.updater import UpdateManager as _UM
 
-        git_hash = await asyncio.to_thread(_UM._get_git_hash, _detect_repo_dir_for_api())
+        if UpdateManager is None:
+            git_hash: Optional[str] = None
+        else:
+            git_hash = await asyncio.to_thread(
+                UpdateManager._get_git_hash,
+                _detect_repo_dir_for_api(),
+            )
         return VersionResponse(
             version=__version__,
             git_hash=git_hash,

@@ -646,7 +646,7 @@ class UpdateManager:
                 ["git", "archive", "HEAD"],
                 cwd=str(repo_dir),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
             )
             sha = hashlib.sha256()
             assert proc.stdout is not None

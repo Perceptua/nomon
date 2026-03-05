@@ -225,9 +225,11 @@ def test_check_for_update_returns_manifest_when_newer():
 
 def test_check_for_update_returns_none_when_up_to_date():
     mgr = _make_manager()
-    manifest = _manifest(version="0.0.1")  # older than current 0.1.0
+    manifest = _manifest(version="0.0.1")  # older than the patched current version
 
-    with patch.object(mgr, "_fetch_manifest", return_value=manifest):
+    with patch("nomon.__version__", "1.0.0"), patch.object(
+        mgr, "_fetch_manifest", return_value=manifest
+    ):
         result = mgr.check_for_update()
 
     assert result is None
