@@ -120,7 +120,6 @@ The primary remote control interface. Mobile app and management server talk to t
 ---
 
 ### `nomon.telemetry` — `TelemetryPublisher`
-
 A background telemetry publisher. Sends structured JSON to an MQTT broker.
 
 **Responsibilities:**
@@ -144,6 +143,30 @@ A background telemetry publisher. Sends structured JSON to an MQTT broker.
 - Block the REST API
 
 **Port:** N/A — uses MQTT (default TCP 1883)
+
+---
+
+### `nomon.updater` — `UpdateManager`
+
+Polls a remote version manifest and applies OTA updates.
+
+**Responsibilities:**
+- Fetch and parse a JSON version manifest via `urllib.request` (no extra deps)
+- Compare manifest version against currently installed `nomon.__version__`
+- Optionally auto-apply updates (`NOMON_UPDATE_AUTO_APPLY=true`)
+- Apply via `git fetch + reset --hard`, SHA verification, pre-flight import check, `systemctl restart`
+- Roll back (`git reset --hard <prev_hash>`) if pre-flight fails — never leaves broken state
+- Run as a daemon background thread alongside the REST API
+
+**Key design decisions:**
+- Stdlib-only: `urllib.request`, `subprocess`, `hashlib`, `threading` — zero new dependencies
+- Notify-only default; explicit opt-in for auto-apply
+- Pre-flight check: runs `python -c "import nomon"` in a fresh subprocess before any restart
+- Abort if camera is recording — will not interrupt active sessions
+
+**Does NOT:**
+- Require, or couple to, the management server (manifest URL is configurable)
+- Handle post-restart rollback (pre-flight failure is caught before restart)
 
 ---
 
@@ -222,15 +245,21 @@ nomon.telemetry
   ├── nomon (for __version__)
   ├── paho-mqtt  (optional — conditional import)
   └── (standard library: threading, json, socket, os)
+
+nomon.updater
+  ├── nomon (for __version__)
+  └── (standard library: urllib.request, subprocess, hashlib, threading, os)
 ```
 
 ---
 
 ## Planned Additions
 
-### Phase 4 — OTA Updates
+### Phase 4 — OTA Updates ✅
 
-A `nomon.updater` module that polls a version manifest endpoint and orchestrates `git pull` + restart via a systemd service.
+`nomon.updater.UpdateManager` polls a version manifest endpoint and orchestrates
+`git fetch + reset --hard` + restart via a systemd service.  Pre-flight import
+checks guard against broken updates; automatic git rollback runs if the check fails.
 
 ### Phase 5 — HAT Module Driver
 

@@ -9,7 +9,7 @@
 | 2 | HTTPS REST API | ✅ Complete |
 | 2.5 | Auth & Rate Limiting | 🔲 Optional / Deferred |
 | 3 | MQTT Telemetry | ✅ Complete |
-| 4 | OTA Update Mechanism | 🔲 Planned |
+| 4 | OTA Update Mechanism | ✅ Complete |
 | 5 | HAT Module Driver | 🔲 Planned |
 
 ---
@@ -77,6 +77,24 @@
 
 ---
 
+### Phase 4 — OTA Update Mechanism (`nomon.updater`)
+
+**Deliverables:**
+- `UpdateManager` class in `nomon.updater`
+- Polls a remote JSON version manifest (stdlib `urllib.request` — no new deps)
+- Notify-only by default; `NOMON_UPDATE_AUTO_APPLY=true` for automatic apply
+- Update procedure: `git fetch + reset --hard` → SHA verification → pre-flight import check → `systemctl restart`
+- Rollback on failure: `git reset --hard <prev_hash>` before raising, so no broken state is left
+- Must not apply update while camera is recording
+- Background daemon thread (same pattern as `TelemetryPublisher`)
+- `from_env()` classmethod; all config via `NOMON_UPDATE_*` env vars
+- Three new REST endpoints: `GET /api/system/version`, `GET /api/system/update/status`, `POST /api/system/update/apply`
+- 60 new tests
+
+**Test totals: 146 passing (20 camera + 14 streaming + 38 API + 3 integration + 23 telemetry + 48 updater)**
+
+---
+
 ## Upcoming Phases
 
 ### Phase 2.5 — Authentication & Rate Limiting (Optional)
@@ -95,25 +113,6 @@ Adds security layers on top of the existing API. Can be deferred since Tailscale
 - Consider `fastapi-users` or hand-rolled JWT with `python-jose`/`authlib`
 - Rate limiting via `slowapi` (wraps `limits`)
 - Log to file; Phase 3 MQTT can forward logs to management server
-
----
-
-### Phase 4 — OTA Update Mechanism
-
-**Purpose:** Allow fleet devices to pull and apply updates from the management server without manual SSH access.
-
-**Candidate deliverables:**
-- [ ] `nomon.updater` module
-- [ ] `GET /api/system/version` endpoint (current version + git hash)
-- [ ] Version manifest endpoint on management server
-- [ ] Polling loop to check for updates
-- [ ] Update procedure: `git pull` + graceful restart via systemd
-- [ ] Rollback mechanism on failed start
-
-**Design constraints:**
-- Must not interrupt active camera sessions mid-recording
-- systemd service required for restart capability
-- SHA-256 checksum verification of update packages
 
 ---
 
