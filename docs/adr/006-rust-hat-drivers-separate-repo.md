@@ -80,7 +80,7 @@ Every Python module was evaluated for independent-repo viability:
 | `nomothetic.camera` | Used by `api` + `streaming` | None — breaks dep graph |
 | `nomothetic.streaming` | Depends on `nomothetic.camera` | None |
 | `nomothetic.api` | Central hub; depends on `camera` | None |
-| `nomothetic.telemetry` | Depends on `nomon.__version__` | None — too lightweight |
+| `nomothetic.telemetry` | Depends on `nomothetic.__version__` | None — too lightweight |
 
 No Python module has external consumers or an independent release cadence.
 
