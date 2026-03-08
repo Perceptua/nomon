@@ -97,10 +97,10 @@ Mgmt Server  ◄───  MQTT telemetry               nomopractic (Rust daemon
 
 ### Testing
 - Tests live in `tests/` and follow `test_*.py` naming
-- Hardware (picamera2, Flask, FastAPI) is mocked — unit tests pass on any Linux machine
+- Hardware (picamera2, Flask, FastAPI) is mocked — unit tests pass on any non-Pi machine (Windows, macOS, Linux)
 - `nomothetic.hat` tests use a mock Unix socket server fixture — no Raspberry Pi required
 - Use `pytest` markers for any tests that require hardware
-- Target: all unit tests pass with `make test` on any Linux dev machine
+- Target: all unit tests pass with `make test` on any non-Pi development machine
 - Current test count: 99 (23 camera + 14 streaming + 26 API + 36 telemetry)
 
 ---
