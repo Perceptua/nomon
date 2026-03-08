@@ -4,7 +4,7 @@
 
 `nomothetic` is a Python package targeting a small fleet of **Raspberry Pi microcontrollers** with HAT (Hardware Attached on Top) modules. Each Pi runs a self-contained HTTPS REST API (`nomothetic.api`) that exposes hardware control to a user mobile application and a centralized device management server.
 
-The package is developed on **Linux** and deployed on **Raspberry Pi OS (Linux)**. Hardware integration tests run on the target Pi devices directly. Many hardware dependencies (`picamera2`, `spidev`, `pigpio`) are Pi-specific and must be handled with conditional imports and graceful degradation so the package remains importable and testable outside the Pi environment.
+The package is developed on **Windows/macOS/Linux** and deployed on **Raspberry Pi OS (Linux)**. Automated tests run on non-Pi systems with hardware dependencies (`picamera2`, `spidev`, `pigpio`) mocked; these Pi-specific libraries must be handled with conditional imports and graceful degradation so the package remains importable and testable on all supported development platforms.
 
 ---
 
