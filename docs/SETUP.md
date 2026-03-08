@@ -174,7 +174,7 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 - Flask chosen for minimal overhead:
   - Single-purpose streaming server (two endpoints)
   - No complex configuration required
-  - Cross-platform (development on Linux, production on RPi)
+  - Cross-platform: development and testing on Windows, macOS, and Linux; production on Raspberry Pi OS
   - Optional dependency keeps nomon lightweight for users who don't need streaming
 
 ### Phase 2: HTTP REST API & Authentication ✅ COMPLETE
