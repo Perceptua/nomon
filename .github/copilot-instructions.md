@@ -4,7 +4,7 @@
 
 `nomothetic` is a Python package targeting a small fleet of **Raspberry Pi microcontrollers** with HAT (Hardware Attached on Top) modules. Each Pi runs a self-contained HTTPS REST API (`nomothetic.api`) that exposes hardware control to a user mobile application and a centralized device management server.
 
-The package is developed on Windows/macOS but deployed on **Raspberry Pi OS (Linux)**. Many hardware dependencies (`picamera2`, `spidev`, `pigpio`) are Linux-only and must be handled with conditional imports and graceful degradation so the package remains importable and testable on non-Pi systems.
+The package is developed on **Linux** and deployed on **Raspberry Pi OS (Linux)**. Hardware integration tests run on the target Pi devices directly. Many hardware dependencies (`picamera2`, `spidev`, `pigpio`) are Pi-specific and must be handled with conditional imports and graceful degradation so the package remains importable and testable outside the Pi environment.
 
 ---
 
@@ -97,10 +97,10 @@ Mgmt Server  ◄───  MQTT telemetry               nomopractic (Rust daemon
 
 ### Testing
 - Tests live in `tests/` and follow `test_*.py` naming
-- Hardware (picamera2, Flask, FastAPI) is mocked — tests must pass on non-Pi, non-Linux systems
+- Hardware (picamera2, Flask, FastAPI) is mocked — unit tests pass on any Linux machine
 - `nomothetic.hat` tests use a mock Unix socket server fixture — no Raspberry Pi required
 - Use `pytest` markers for any tests that require hardware
-- Target: all tests pass with `make test` on Windows/macOS
+- Target: all unit tests pass with `make test` on any Linux dev machine
 - Current test count: 99 (23 camera + 14 streaming + 26 API + 36 telemetry)
 
 ---
