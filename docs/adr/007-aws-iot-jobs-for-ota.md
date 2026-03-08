@@ -44,7 +44,7 @@ Do **not** adopt Greengrass v2 due to its JVM memory requirements on Pi Zero-cla
 
 For a fleet of a handful of devices managed by one person:
 - SSH via Tailscale VPN is always available for admin access
-- `git pull && sudo systemctl restart nomon` is a two-command update per device
+- `git pull && sudo systemctl restart nomothetic` is a two-command update per device
 - No additional process consuming RAM on Pi Zero 2W hardware (~5–10 MB saved)
 - No `NOMON_UPDATE_*` environment variables to configure per device
 - No manifest server to maintain
