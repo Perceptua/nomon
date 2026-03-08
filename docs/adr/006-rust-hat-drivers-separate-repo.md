@@ -62,7 +62,7 @@ The Rust crate layout is in [docs/nomopractic_crate.md](../nomopractic_crate.md)
   SHA-256 verification + atomic file swap, not `git fetch + reset --hard`
   (the current `UpdateManager` strategy)
 - **Different systemd service**: `nomopractic.service` has an independent
-  lifecycle from `nomon.service`
+  lifecycle from `nomothetic.service`
 - **Different release cadence**: HAT firmware may change independently of the
   Python REST API; coupling them in one repo would force unnecessary
   co-releases
