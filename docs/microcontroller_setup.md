@@ -63,8 +63,8 @@ Named GPIO pins:
 
 MCU reset procedure: assert BCM5 low for ≥ 10 ms, then high.
 
-All hardware control is implemented in the **nomon-hat Rust daemon** (Phase 5).
-The Python `nomon` package communicates with it via IPC only — it does not
+All hardware control is implemented in the **nomopractic Rust daemon** (Phase 5).
+The Python `nomothetic` package communicates with it via IPC only — it does not
 write I2C registers or toggle GPIO directly. See
 [hat_ipc_schema.md](hat_ipc_schema.md).
 
@@ -91,12 +91,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### Install `nomon`
 
-Clone the `nomon` repository, then run `uv sync`:
+Clone the `nomothetic` repository, then run `uv sync`:
 
 ```bash
 cd ~
-git clone https://github.com/Perceptua/nomon.git
-cd ~/nomon
+git clone https://github.com/Perceptua/nomothetic.git
+cd ~/nomothetic
 uv sync
 ```
 
@@ -106,14 +106,14 @@ uv sync
 To start the API server on the Raspberry Pi device, activate the virtual environment using
 
 ```bash
-cd ~/nomon
+cd ~/nomothetic
 source .venv/bin/activate
 ```
 
 Then run `python3` to open a Python shell. In the shell, run
 
 ```python3
-from nomon.api import APIServer
+from nomothetic.api import APIServer
 server = APIServer(host="0.0.0.0", port=8443)
 thread = server.start_background()
 ```
@@ -124,10 +124,10 @@ The server should announce it is running on port 8443. To verify remote connecti
 ---
 
 
-## Install and Run `nomon-hat` Daemon (Phase 5)
+## Install and Run `nomopractic` Daemon (Phase 5)
 
-The `nomon-hat` Rust daemon owns all Robot HAT V4 hardware access. The Python
-`nomon` package connects to it via a Unix domain socket. The daemon must be
+The `nomopractic` Rust daemon owns all Robot HAT V4 hardware access. The Python
+`nomothetic` package connects to it via a Unix domain socket. The daemon must be
 running before any HAT endpoints are used.
 
 ### One-time device setup
@@ -140,15 +140,15 @@ sudo usermod -aG nomon pi        # replace 'pi' with your nomon service user
 
 ### Install the binary
 
-Download the latest `nomon-hat` release binary for `aarch64-unknown-linux-gnu`
-from the nomon-hat GitHub Releases page and install it:
+Download the latest `nomopractic` release binary for `aarch64-unknown-linux-gnu`
+from the nomopractic GitHub Releases page and install it:
 
 ```bash
 # Example — replace <version> and <sha256> with actual release values
-curl -LO https://github.com/Perceptua/nomon-hat/releases/download/v<version>/nomon-hat
-echo "<sha256>  nomon-hat" | sha256sum --check
-chmod +x nomon-hat
-sudo mv nomon-hat /usr/local/bin/nomon-hat
+curl -LO https://github.com/Perceptua/nomopractic/releases/download/v<version>/nomopractic
+echo "<sha256>  nomopractic" | sha256sum --check
+chmod +x nomopractic
+sudo mv nomopractic /usr/local/bin/nomopractic
 ```
 
 ### Configure
@@ -156,11 +156,11 @@ sudo mv nomon-hat /usr/local/bin/nomon-hat
 Create the config file:
 
 ```bash
-sudo mkdir -p /etc/nomon-hat
-sudo tee /etc/nomon-hat/config.toml <<'EOF'
+sudo mkdir -p /etc/nomopractic
+sudo tee /etc/nomopractic/config.toml <<'EOF'
 i2c_bus = 1
 hat_address = 0x14
-socket_path = "/run/nomon-hat/nomon-hat.sock"
+socket_path = "/run/nomopractic/nomopractic.sock"
 socket_mode = 0o660
 log_level = "info"
 servo_default_ttl_ms = 500
@@ -170,38 +170,38 @@ EOF
 ### Install the systemd service
 
 ```bash
-# Download the unit file from the nomon-hat repo
-sudo curl -o /etc/systemd/system/nomon-hat.service \
-  https://raw.githubusercontent.com/Perceptua/nomon-hat/main/systemd/nomon-hat.service
+# Download the unit file from the nomopractic repo
+sudo curl -o /etc/systemd/system/nomopractic.service \
+  https://raw.githubusercontent.com/Perceptua/nomopractic/main/systemd/nomopractic.service
 sudo systemctl daemon-reload
-sudo systemctl enable nomon-hat
-sudo systemctl start nomon-hat
+sudo systemctl enable nomopractic
+sudo systemctl start nomopractic
 ```
 
 ### Verify
 
 ```bash
 # Check service status
-sudo systemctl status nomon-hat
+sudo systemctl status nomopractic
 
 # Send a health request manually (requires socat)
 echo '{"id":"1","method":"health","params":{}}' | \
-  socat - UNIX-CONNECT:/run/nomon-hat/nomon-hat.sock
+  socat - UNIX-CONNECT:/run/nomopractic/nomopractic.sock
 # Expected: {"id":"1","ok":true,"result":{"status":"ok",...}}
 ```
 
 ### Configure nomon to use the socket
 
 Set the socket path in the nomon environment file if it differs from the
-default `/run/nomon-hat/nomon-hat.sock`:
+default `/run/nomopractic/nomopractic.sock`:
 
 ```bash
-# /home/pi/nomon/.env (example)
-NOMON_HAT_SOCKET_PATH=/run/nomon-hat/nomon-hat.sock
+# /home/pi/nomothetic/.env (example)
+NOMON_HAT_SOCKET_PATH=/run/nomopractic/nomopractic.sock
 ```
 
-nomon will surface `503 Service Unavailable` from any `/api/hat/...` endpoint
+nomothetic will surface `503 Service Unavailable` from any `/api/hat/...` endpoint
 if the daemon is not running or the socket does not exist.
 
 See [hat_ipc_schema.md](hat_ipc_schema.md) for the full IPC protocol and
-[nomon_hat_crate.md](nomon_hat_crate.md) for the Rust crate structure.
+[nomopractic_crate.md](nomopractic_crate.md) for the Rust crate structure.

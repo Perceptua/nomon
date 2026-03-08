@@ -20,7 +20,7 @@ except ImportError:
     Response = None  # type: ignore
     render_template_string = None  # type: ignore
 
-from .camera import Camera
+from nomothetic.camera import Camera
 
 # HTML template for the viewer page
 VIEWER_TEMPLATE = """
@@ -29,7 +29,7 @@ VIEWER_TEMPLATE = """
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nomon Camera Stream</title>
+    <title>Nomon Camera Stream</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
@@ -76,7 +76,7 @@ VIEWER_TEMPLATE = """
 </head>
 <body>
     <div class="container">
-        <h1>🎥 nomon Camera Stream</h1>
+        <h1>🎥 Nomon Camera Stream</h1>
         <div class="stream-wrapper">
             <img src="/stream" alt="Camera Stream">
         </div>
@@ -157,7 +157,7 @@ class StreamServer:
             If port is not in valid range (1-65535)
         """
         if Flask is None:
-            raise RuntimeError("Flask not available. " "Install with: pip install 'nomon[web]'")
+            raise RuntimeError("Flask not available. " "Install with: pip install 'nomothetic[web]'")
 
         if not 1 <= port <= 65535:
             raise ValueError(f"Port must be between 1 and 65535, got {port}")

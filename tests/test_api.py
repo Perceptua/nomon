@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from nomon.api import APIServer, create_app
+from nomothetic.api import APIServer, create_app
 
 
 @pytest.fixture
@@ -54,9 +54,9 @@ def test_camera_status_without_camera(client):
 
 def test_camera_status_with_camera(client, mock_camera):
     """Test camera status endpoint returns current state."""
-    import nomon.api
+    import nomothetic.api
 
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.get("/api/camera/status")
     assert response.status_code == 200
@@ -69,22 +69,22 @@ def test_camera_status_with_camera(client, mock_camera):
     assert "timestamp" in data
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_camera_status_recording(client, mock_camera):
     """Test camera status reflects recording state."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera._is_recording = True
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.get("/api/camera/status")
     assert response.status_code == 200
     assert response.json()["recording"] is True
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 # ============================================================================
@@ -94,9 +94,9 @@ def test_camera_status_recording(client, mock_camera):
 
 def test_capture_image_success(client, mock_camera):
     """Test successful image capture."""
-    import nomon.api
+    import nomothetic.api
 
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/capture",
@@ -110,15 +110,15 @@ def test_capture_image_success(client, mock_camera):
     mock_camera.capture_image.assert_called_once_with("test.jpg")
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_capture_image_invalid_filename(client, mock_camera):
     """Test capture with invalid filename raises error."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera.capture_image.side_effect = ValueError("Invalid filename")
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/capture",
@@ -128,15 +128,15 @@ def test_capture_image_invalid_filename(client, mock_camera):
     assert "Invalid filename" in response.json()["error"]
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_capture_image_camera_error(client, mock_camera):
     """Test capture with camera error."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera.capture_image.side_effect = RuntimeError("Camera failed")
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/capture",
@@ -146,7 +146,7 @@ def test_capture_image_camera_error(client, mock_camera):
     assert "Camera failed" in response.json()["error"]
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_capture_without_camera(client):
@@ -166,9 +166,9 @@ def test_capture_without_camera(client):
 
 def test_record_start_success(client, mock_camera):
     """Test successful recording start."""
-    import nomon.api
+    import nomothetic.api
 
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/record/start",
@@ -182,14 +182,14 @@ def test_record_start_success(client, mock_camera):
     mock_camera.start_recording.assert_called_once_with("video.mp4")
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_start_with_encoder(client, mock_camera):
     """Test recording start with encoder specification."""
-    import nomon.api
+    import nomothetic.api
 
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/record/start",
@@ -200,15 +200,15 @@ def test_record_start_with_encoder(client, mock_camera):
     assert mock_camera.encoder == "mjpeg"
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_start_already_recording(client, mock_camera):
     """Test recording start when already recording."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera._is_recording = True
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/record/start",
@@ -218,15 +218,15 @@ def test_record_start_already_recording(client, mock_camera):
     assert "Recording already in progress" in response.json()["error"]
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_start_invalid_filename(client, mock_camera):
     """Test recording start with invalid filename."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera.start_recording.side_effect = ValueError("Invalid filename")
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post(
         "/api/camera/record/start",
@@ -235,7 +235,7 @@ def test_record_start_invalid_filename(client, mock_camera):
     assert response.status_code == 400
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_start_without_camera(client):
@@ -250,10 +250,10 @@ def test_record_start_without_camera(client):
 
 def test_record_stop_success(client, mock_camera):
     """Test successful recording stop."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera._is_recording = True
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post("/api/camera/record/stop")
     assert response.status_code == 200
@@ -263,37 +263,37 @@ def test_record_stop_success(client, mock_camera):
     mock_camera.stop_recording.assert_called_once()
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_stop_not_recording(client, mock_camera):
     """Test recording stop when not recording."""
-    import nomon.api
+    import nomothetic.api
 
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post("/api/camera/record/stop")
     assert response.status_code == 409
     assert "No recording in progress" in response.json()["error"]
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_stop_camera_error(client, mock_camera):
     """Test recording stop with camera error."""
-    import nomon.api
+    import nomothetic.api
 
     mock_camera._is_recording = True
     mock_camera.stop_recording.side_effect = RuntimeError("Stop failed")
-    nomon.api._camera = mock_camera
+    nomothetic.api._camera = mock_camera
 
     response = client.post("/api/camera/record/stop")
     assert response.status_code == 500
     assert "Stop failed" in response.json()["error"]
 
     # Cleanup
-    nomon.api._camera = None
+    nomothetic.api._camera = None
 
 
 def test_record_stop_without_camera(client):
@@ -372,7 +372,7 @@ def test_api_server_get_config_with_ssl():
 
 def test_capture_request_model():
     """Test CaptureRequest validation."""
-    from nomon.api import CaptureRequest
+    from nomothetic.api import CaptureRequest
 
     req = CaptureRequest(filename="test.jpg")
     assert req.filename == "test.jpg"
@@ -380,7 +380,7 @@ def test_capture_request_model():
 
 def test_record_request_model():
     """Test RecordRequest validation."""
-    from nomon.api import RecordRequest
+    from nomothetic.api import RecordRequest
 
     req = RecordRequest(filename="video.mp4")
     assert req.filename == "video.mp4"
@@ -392,7 +392,7 @@ def test_record_request_model():
 
 def test_camera_status_model():
     """Test CameraStatus model."""
-    from nomon.api import CameraStatus
+    from nomothetic.api import CameraStatus
 
     status = CameraStatus(
         camera_ready=True,
@@ -404,198 +404,4 @@ def test_camera_status_model():
     )
     assert status.camera_ready is True
     assert status.recording is False
-
-
-# ============================================================================
-# System / OTA Endpoints
-# ============================================================================
-
-
-@pytest.fixture
-def mock_updater():
-    """Return a minimal mock UpdateManager."""
-    from datetime import datetime, timezone
-
-    from nomon.updater import UpdateManager
-
-    mgr = MagicMock(spec=UpdateManager)
-    mgr._lock = __import__("threading").Lock()
-    mgr.update_available = False
-    mgr.latest_manifest = None
-    mgr.last_checked = datetime(2026, 3, 4, 12, 0, 0, tzinfo=timezone.utc)
-    return mgr
-
-
-def test_version_endpoint_returns_version(client):
-    """GET /api/system/version returns version, git_hash, and timestamp."""
-    from nomon.updater import UpdateManager
-
-    with patch.object(UpdateManager, "_get_git_hash", return_value="abc123"):
-        response = client.get("/api/system/version")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert "version" in data
-    assert "git_hash" in data
-    assert "timestamp" in data
-    assert data["git_hash"] == "abc123"
-
-
-def test_version_endpoint_version_matches_package(client):
-    """GET /api/system/version version field matches nomon.__version__."""
-    import nomon
-    from nomon.updater import UpdateManager
-
-    with patch.object(UpdateManager, "_get_git_hash", return_value="abc"):
-        response = client.get("/api/system/version")
-
-    assert response.json()["version"] == nomon.__version__
-
-
-def test_update_status_without_updater(client):
-    """GET /api/system/update/status returns sensible defaults when no updater configured."""
-    import nomon.api
-
-    nomon.api._updater = None
-    response = client.get("/api/system/update/status")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["update_available"] is False
-    assert data["latest_version"] is None
-    assert data["last_checked"] is None
-
-
-def test_update_status_no_update_available(client, mock_updater):
-    """GET /api/system/update/status returns False when no update is queued."""
-    import nomon.api
-
-    mock_updater.update_available = False
-    mock_updater.latest_manifest = None
-    nomon.api._updater = mock_updater
-
-    response = client.get("/api/system/update/status")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["update_available"] is False
-    assert data["latest_version"] is None
-
-    nomon.api._updater = None
-
-
-def test_update_status_update_available(client, mock_updater):
-    """GET /api/system/update/status reflects available update."""
-    import nomon.api
-
-    mock_updater.update_available = True
-    mock_updater.latest_manifest = {"version": "99.0.0"}
-    nomon.api._updater = mock_updater
-
-    response = client.get("/api/system/update/status")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["update_available"] is True
-    assert data["latest_version"] == "99.0.0"
-
-    nomon.api._updater = None
-
-
-def test_apply_update_without_updater_returns_503(client):
-    """POST /api/system/update/apply returns 503 when updater not configured."""
-    import nomon.api
-
-    nomon.api._updater = None
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 503
-    assert "NOMON_UPDATE_MANIFEST_URL" in response.json()["error"]
-
-
-def test_apply_update_no_update_available_returns_503(client, mock_updater):
-    """POST /api/system/update/apply returns 503 when no update is queued."""
-    import nomon.api
-
-    mock_updater.update_available = False
-    nomon.api._updater = mock_updater
-
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 503
-
-    nomon.api._updater = None
-
-
-def test_apply_update_success(client, mock_updater):
-    """POST /api/system/update/apply returns 200 on success."""
-    import nomon.api
-
-    mock_updater.update_available = True
-    mock_updater.latest_manifest = {"version": "1.1.0", "git_sha": "abc123"}
-    mock_updater.apply_update.return_value = True
-    nomon.api._updater = mock_updater
-
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert "timestamp" in data
-
-    nomon.api._updater = None
-
-
-def test_apply_update_409_when_recording(client, mock_updater):
-    """POST /api/system/update/apply returns 409 when camera is recording."""
-    import nomon.api
-
-    mock_updater.update_available = True
-    mock_updater.latest_manifest = {"version": "1.1.0", "git_sha": "abc123"}
-    mock_updater.apply_update.side_effect = RuntimeError("recording in progress")
-    nomon.api._updater = mock_updater
-
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 409
-
-    nomon.api._updater = None
-
-
-def test_apply_update_500_on_failure(client, mock_updater):
-    """POST /api/system/update/apply returns 500 on update error."""
-    import nomon.api
-
-    mock_updater.update_available = True
-    mock_updater.latest_manifest = {"version": "1.1.0", "git_sha": "abc123"}
-    mock_updater.apply_update.side_effect = RuntimeError("git fetch failed")
-    nomon.api._updater = mock_updater
-
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 500
-
-    nomon.api._updater = None
-
-
-def test_apply_update_503_on_no_update_available_runtime_error(client, mock_updater):
-    """POST /api/system/update/apply returns 503 when apply_update raises 'no update available'."""
-    import nomon.api
-
-    mock_updater.update_available = True
-    mock_updater.latest_manifest = {"version": "1.1.0", "git_sha": "abc123"}
-    mock_updater.apply_update.side_effect = RuntimeError("No update available. Call check_for_update() first.")
-    nomon.api._updater = mock_updater
-
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 503
-
-    nomon.api._updater = None
-
-
-def test_apply_update_503_on_unknown_rollback_point(client, mock_updater):
-    """POST /api/system/update/apply returns 503 when apply_update raises 'rollback point' error."""
-    import nomon.api
-
-    mock_updater.update_available = True
-    mock_updater.latest_manifest = {"version": "1.1.0", "git_sha": "abc123"}
-    mock_updater.apply_update.side_effect = RuntimeError("Cannot apply update without a valid rollback point.")
-    nomon.api._updater = mock_updater
-
-    response = client.post("/api/system/update/apply")
-    assert response.status_code == 503
-
-    nomon.api._updater = None
 

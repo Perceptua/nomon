@@ -1,4 +1,4 @@
-# Contributing to nomon
+# Contributing to nomothetic
 
 ## Development Environment
 
@@ -11,8 +11,8 @@
 ### Setup
 
 ```bash
-git clone https://github.com/Perceptua/nomon.git
-cd nomon
+git clone https://github.com/Perceptua/nomothetic.git
+cd nomothetic
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -e ".[dev,web,api]"
@@ -31,7 +31,7 @@ make install-dev
 ```bash
 make test
 # or
-pytest --cov=nomon --cov-report=term-missing
+pytest --cov=nomothetic --cov-report=term-missing
 ```
 
 All 63 tests must pass before submitting changes. Tests run entirely with mocked hardware — no Pi required.
@@ -161,10 +161,10 @@ class Camera:
 
 ## Adding a New Module
 
-1. Create `src/nomon/<module>.py` — one class per file is the norm
+1. Create `src/nomothetic/<module>.py` — one class per file is the norm
 2. Add conditional imports for any Linux-only dependencies
 3. Raise `RuntimeError` at instantiation if required hardware is unavailable
-4. Export the class from `src/nomon/__init__.py` (with `try/except` if optional)
+4. Export the class from `src/nomothetic/__init__.py` (with `try/except` if optional)
 5. Create `tests/test_<module>.py` with mocked hardware
 6. Update `docs/architecture.md` with the new component
 7. Update `pyproject.toml` optional-dependencies if new packages are required

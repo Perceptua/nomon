@@ -2,7 +2,7 @@
 
 ## System Overview
 
-nomon runs on a small fleet of Raspberry Pi microcontrollers, each operating independently as a self-contained node. A mobile app and centralized management server interact with each Pi via its REST API.
+`nomon` runs on a small fleet of Raspberry Pi microcontrollers, each operating independently as a self-contained node. A mobile app and centralized management server interact with each Pi via its REST API.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -16,16 +16,16 @@ nomon runs on a small fleet of Raspberry Pi microcontrollers, each operating ind
 ┌───────▼───────────────────▼────────────────────────▼────────────┐
 │  Raspberry Pi Zero 2 W — Debian GNU/Linux 13 (trixie)           │
 │                                                                 │
-│   nomon.api (FastAPI/uvicorn)    StreamServer (Flask/MJPEG)     │
+│   nomothetic.api (FastAPI/uvicorn)    StreamServer (Flask/MJPEG)     │
 │         │                                │                      │
-│   nomon.camera (picamera2) ──────────────┘                      │
+│   nomothetic.camera (picamera2) ──────────────┘                      │
 │         │                                                       │
-│   nomon.telemetry (paho-mqtt) ────────────► MQTT broker         │
+│   nomothetic.telemetry (paho-mqtt) ────────────► MQTT broker         │
 │         │                                                       │
-│   nomon.hat.HatClient                                           │
-│         │  NDJSON over Unix socket (/run/nomon-hat/nomon-hat.sock)   │
+│   nomothetic.hat.HatClient                                           │
+│         │  NDJSON over Unix socket (/run/nomopractic/nomopractic.sock)   │
 │         ▼                                                       │
-│   nomon-hat.service (Rust daemon)                               │
+│   nomopractic.service (Rust daemon)                               │
 │         │  rppal (pure-Rust I2C/GPIO)                           │
 │         ▼                                                       │
 │   SunFounder Robot HAT V4  ──  I2C bus 1, address 0x14         │
@@ -38,7 +38,7 @@ nomon runs on a small fleet of Raspberry Pi microcontrollers, each operating ind
 
 ## Module Responsibilities
 
-### `nomon.camera` — `Camera`
+### `nomothetic.camera` — `Camera`
 
 The lowest-level hardware abstraction. Wraps `picamera2` directly.
 
@@ -62,7 +62,7 @@ The lowest-level hardware abstraction. Wraps `picamera2` directly.
 
 ---
 
-### `nomon.streaming` — `StreamServer`
+### `nomothetic.streaming` — `StreamServer`
 
 A lightweight local LAN viewer. Not used by the mobile app.
 
@@ -82,7 +82,7 @@ A lightweight local LAN viewer. Not used by the mobile app.
 
 ---
 
-### `nomon.api` — `APIServer` / `create_app()`
+### `nomothetic.api` — `APIServer` / `create_app()`
 
 The primary remote control interface. Mobile app and management server talk to this.
 
@@ -125,12 +125,12 @@ The primary remote control interface. Mobile app and management server talk to t
 
 ---
 
-### `nomon.telemetry` — `TelemetryPublisher`
+### `nomothetic.telemetry` — `TelemetryPublisher`
 A background telemetry publisher. Sends structured JSON to an MQTT broker.
 
 **Responsibilities:**
 - Discover device identity (env var → Pi serial → hostname)
-- Build a JSON telemetry payload (device ID, timestamp, nomon version, camera status)
+- Build a JSON telemetry payload (device ID, timestamp, nomothetic version, camera status)
 - Publish periodically over MQTT in a daemon background thread
 - Handle broker unavailability with exponential back-off reconnect
 - Expose a one-shot `publish_now()` for scripted or ad-hoc use
@@ -152,13 +152,13 @@ A background telemetry publisher. Sends structured JSON to an MQTT broker.
 
 ---
 
-### `nomon.hat` — `HatClient`
+### `nomothetic.hat` — `HatClient`
 
-The IPC client for the `nomon-hat` Rust daemon. See
+The IPC client for the `nomopractic` Rust daemon. See
 [docs/hat_python_client.md](hat_python_client.md) for the full module design.
 
 **Responsibilities:**
-- Open and maintain a connection to `/run/nomon-hat/nomon-hat.sock`
+- Open and maintain a connection to `/run/nomopractic/nomopractic.sock`
 - Serialise requests and deserialise responses (NDJSON)
 - Expose typed Python methods (`get_battery_voltage`, `set_servo_angle`, etc.)
 - Raise `HatConnectionError` if the daemon is not running
@@ -168,33 +168,11 @@ The IPC client for the `nomon-hat` Rust daemon. See
 - Contains *no hardware register logic* — all hardware knowledge is in the Rust daemon
 - `asyncio.to_thread` wraps blocking socket calls for FastAPI route handlers
 - Persistent connection with automatic reconnect on broken pipe
-- Follows the same conditional-import pattern as other `nomon` modules
+- Follows the same conditional-import pattern as other `nomothetic` modules
 
 **Does NOT:**
 - Know about I2C addresses, PWM registers, ADC scaling
 - Run its own thread — called synchronously from route handlers (wrapped in `to_thread`)
-
----
-
-Polls a remote version manifest and applies OTA updates.
-
-**Responsibilities:**
-- Fetch and parse a JSON version manifest via `urllib.request` (no extra deps)
-- Compare manifest version against currently installed `nomon.__version__`
-- Optionally auto-apply updates (`NOMON_UPDATE_AUTO_APPLY=true`)
-- Apply via `git fetch + reset --hard`, SHA verification, pre-flight import check, `systemctl restart`
-- Roll back (`git reset --hard <prev_hash>`) if pre-flight fails — never leaves broken state
-- Run as a daemon background thread alongside the REST API
-
-**Key design decisions:**
-- Stdlib-only: `urllib.request`, `subprocess`, `hashlib`, `threading` — zero new dependencies
-- Notify-only default; explicit opt-in for auto-apply
-- Pre-flight check: runs `python -c "import nomon"` in a fresh subprocess before any restart
-- Abort if camera is recording — will not interrupt active sessions
-
-**Does NOT:**
-- Require, or couple to, the management server (manifest URL is configurable)
-- Handle post-restart rollback (pre-flight failure is caught before restart)
 
 ---
 
@@ -246,9 +224,9 @@ Mobile App
   APIServer (FastAPI route)
         │ asyncio.to_thread(hat_client.get_battery_voltage)
         │
-  HatClient (nomon.hat)
+  HatClient (nomothetic.hat)
         │ {"id":"1","method":"get_battery_voltage","params":{}}\n
-        │  →  Unix socket  →  nomon-hat.service (Rust)
+        │  →  Unix socket  →  nomopractic.service (Rust)
         │       I2C read: bus 1, addr 0x14, ADC channel A4
         │  ←  {"id":"1","ok":true,"result":{"voltage_v":7.42}}\n
         │
@@ -267,9 +245,9 @@ Mobile App
   APIServer (FastAPI route)
         │ asyncio.to_thread(hat_client.set_servo_angle, 0, 90.0)
         │
-  HatClient (nomon.hat)
+  HatClient (nomothetic.hat)
         │ {"id":"2","method":"set_servo_angle","params":{"channel":0,"angle_deg":90.0,"ttl_ms":500}}\n
-        │  →  Unix socket  →  nomon-hat.service (Rust)
+        │  →  Unix socket  →  nomopractic.service (Rust)
         │       I2C PWM write: pulse_us=1611 on channel 0
         │  ←  {"id":"2","ok":true,"result":{"channel":0,"angle_deg":90.0,"pulse_us":1611}}\n
         │
@@ -295,100 +273,83 @@ Mobile App
 ## Dependency Map
 
 ```
-nomon.hat
+nomothetic.hat
   ├── socket (stdlib)
   ├── json (stdlib)
   └── (no hardware deps — all hardware is in the Rust daemon)
 
-nomon.api
-  ├── nomon.camera
-  ├── nomon.hat           (HatClient — IPC to nomon-hat daemon)
+nomothetic.api
+  ├── nomothetic.camera
+  ├── nomothetic.hat           (HatClient — IPC to nomopractic daemon)
   ├── fastapi
   ├── uvicorn
   ├── pydantic
   ├── cryptography
   └── python-dotenv
 
-nomon.streaming
-  ├── nomon.camera
+nomothetic.streaming
+  ├── nomothetic.camera
   └── flask
 
-nomon.camera
+nomothetic.camera
   ├── picamera2  (Linux only — conditional import)
   └── (no other runtime deps)
 
-nomon.telemetry
-  ├── nomon (for __version__)
+nomothetic.telemetry
+  ├── nomothetic (for __version__)
   ├── paho-mqtt  (optional — conditional import)
   └── (standard library: threading, json, socket, os)
-
-nomon.updater
-  ├── nomon (for __version__)
-  └── (standard library: urllib.request, subprocess, hashlib, threading, os)
 ```
 
 ---
 
 ## Planned Additions
 
-### Phase 4 — OTA Updates ✅
-
-`nomon.updater.UpdateManager` polls a version manifest endpoint and orchestrates
-`git fetch + reset --hard` + restart via a systemd service.  Pre-flight import
-checks guard against broken updates; automatic git rollback runs if the check fails.
-
 ### Phase 5 — HAT Module Driver (Rust, Separate Repo)
 
-A standalone Rust daemon in a new `nomon-hat` repository (see ADR-006). Runs
-as `nomon-hat.service` and communicates with `nomon.api` via a local Unix
-domain socket at `/run/nomon-hat/nomon-hat.sock`. Python was evaluated and rejected for
+A standalone Rust daemon in a new `nomopractic` repository (see ADR-006). Runs
+as `nomopractic.service` and communicates with `nomothetic.api` via a local Unix
+domain socket at `/run/nomopractic/nomopractic.sock`. Python was evaluated and rejected for
 HAT drivers due to GIL-induced latency in timing-critical GPIO/I2C operations.
 
 **Hardware confirmed:** SunFounder Robot HAT V4 on I2C bus 1 at address `0x14`.
 See [docs/microcontroller_setup.md](microcontroller_setup.md) for discovery details.
 
-**IPC:** `nomon.hat.HatClient` (Python) connects to the socket and exchanges
+**IPC:** `nomothetic.hat.HatClient` (Python) connects to the socket and exchanges
 NDJSON messages with the Rust daemon. The full schema is defined in
 [docs/hat_ipc_schema.md](hat_ipc_schema.md).
 
-`nomon.api` HAT endpoints (`/api/hat/...`) proxy requests via `HatClient`.
+`nomothetic.api` HAT endpoints (`/api/hat/...`) proxy requests via `HatClient`.
 If the daemon is not running, HAT endpoints return `503 Service Unavailable`.
 
 **First milestone deliverables:** battery voltage reading + servo angle control.
-See [docs/nomon_hat_crate.md](nomon_hat_crate.md) for Rust crate structure and
+See [docs/nomopractic_crate.md](nomopractic_crate.md) for Rust crate structure and
 [docs/hat_python_client.md](hat_python_client.md) for the Python client design.
-
-### Phase 6 — AWS IoT Jobs Migration (Planned)
-
-Replaces the `nomon.updater` polling-based OTA strategy with push-based
-updates via AWS IoT Jobs (see ADR-007). A single job document coordinates
-versions for both the Python `nomon` package and the Rust `nomon-hat` binary.
-`nomon.telemetry` may consolidate its MQTT connection with the IoT Jobs
-subscription to use a single AWS IoT Core broker.
 
 ---
 
 ## Repository Strategy
 
-All Python modules remain in this single repository. The `UpdateManager`
-(Phase 4) relies on a single-repo atomic update (`git fetch + reset --hard`);
-splitting Python modules would break atomicity and require dual-manifest OTA.
+All Python modules remain in this single repository. None of them have external
+consumers or independent release cadences, so there is no benefit to splitting
+them. Updates are applied atomically: a single `git pull` moves all modules to
+the same commit simultaneously.
 
-The Rust HAT daemon (`nomon-hat`) lives in a separate repository because it
+The Rust HAT daemon (`nomopractic`) lives in a separate repository because it
 produces a different build artifact (compiled binary), uses a different update
 mechanism (artifact download, not git), runs as a separate systemd service,
 and has an independent release cadence. See ADR-006 for the full rationale.
 
 ```
-nomon/              ← Python monorepo (this repo)
-  nomon.camera
-  nomon.streaming
-  nomon.api
-  nomon.telemetry
-  nomon.updater
+nomothetic/              ← Python monorepo (this repo)
+  nomothetic.camera
+  nomothetic.streaming
+  nomothetic.api
+  nomothetic.telemetry
+  nomothetic.hat     ← IPC client for nomopractic (Phase 5)
 
-nomon-hat/          ← Rust repo (Phase 5, separate)
+nomopractic/          ← Rust repo (Phase 5, separate)
   Cargo.toml
   src/main.rs
-  systemd/nomon-hat.service
+  systemd/nomopractic.service
 ```

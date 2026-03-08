@@ -1,1 +1,1 @@
-"""Test suite for nomon."""
+"""Test suite for nomothetic."""

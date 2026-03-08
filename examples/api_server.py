@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Example: Running the nomon Camera REST API Server
+"""Example: Running the Nomon Camera REST API Server
 
 This script demonstrates how to start the REST API server
 and make requests to control the camera remotely.
 
 Requirements:
-    pip install nomon[api]
+    pip install nomothetic[api]
 """
 
 # ============================================================================
@@ -13,7 +13,7 @@ Requirements:
 # ============================================================================
 
 if __name__ == "__main__":
-    from nomon.api import APIServer
+    from nomothetic.api import APIServer
 
     # Initialize API server on localhost with HTTPS
     # Self-signed certificates are automatically created in .certs/
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     )
 
     print("=" * 70)
-    print("nomon Camera REST API Server")
+    print("Nomon Camera REST API Server")
     print("=" * 70)
     print()
     print("Server starting at:")
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 # ============================================================================
 
 if False:  # Change to True to run this example
-    from nomon.api import APIServer
+    from nomothetic.api import APIServer
     import time
     import sys
 

@@ -24,20 +24,20 @@ Options evaluated for Phase 5 driver implementation:
    imports for `spidev`, `gpiozero`, `pigpio`
 2. **Rust in this repo** — mixed-language monorepo with Cargo + setuptools
 3. **Rust in a separate repo** — standalone Rust daemon, communicates with
-   `nomon.api` via local IPC
+   `nomothetic.api` via local IPC
 
 ## Decision
 
-Implement HAT/sensor drivers in **Rust in a separate repository** (`nomon-hat`),
-running as its own systemd service (`nomon-hat.service`). Communication with
-`nomon.api` occurs over a **Unix domain socket at `/run/nomon-hat/nomon-hat.sock`** using
+Implement HAT/sensor drivers in **Rust in a separate repository** (`nomopractic`),
+running as its own systemd service (`nomopractic.service`). Communication with
+`nomothetic.api` occurs over a **Unix domain socket at `/run/nomopractic/nomopractic.sock`** using
 **newline-delimited JSON (NDJSON)** framing. The localhost HTTP fallback option
 is explicitly **not implemented** — the Unix socket approach is simpler, lower
 overhead, and OS-enforced process isolation is sufficient.
 
 The full IPC schema is specified in [docs/hat_ipc_schema.md](../hat_ipc_schema.md).
 The Python client module design is in [docs/hat_python_client.md](../hat_python_client.md).
-The Rust crate layout is in [docs/nomon_hat_crate.md](../nomon_hat_crate.md).
+The Rust crate layout is in [docs/nomopractic_crate.md](../nomopractic_crate.md).
 
 ## Rationale
 
@@ -61,7 +61,7 @@ The Rust crate layout is in [docs/nomon_hat_crate.md](../nomon_hat_crate.md).
 - **Different update pipeline**: the binary is deployed via artifact download +
   SHA-256 verification + atomic file swap, not `git fetch + reset --hard`
   (the current `UpdateManager` strategy)
-- **Different systemd service**: `nomon-hat.service` has an independent
+- **Different systemd service**: `nomopractic.service` has an independent
   lifecycle from `nomon.service`
 - **Different release cadence**: HAT firmware may change independently of the
   Python REST API; coupling them in one repo would force unnecessary
@@ -77,35 +77,34 @@ Every Python module was evaluated for independent-repo viability:
 
 | Module | Coupling | Split benefit |
 |---|---|---|
-| `nomon.camera` | Used by `api` + `streaming` | None — breaks dep graph |
-| `nomon.streaming` | Depends on `nomon.camera` | None |
-| `nomon.api` | Central hub; depends on `camera` | None |
-| `nomon.telemetry` | Depends on `nomon.__version__` | None — too lightweight |
-| `nomon.updater` | Depends on `nomon.__version__` | None — Pi/systemd-specific |
+| `nomothetic.camera` | Used by `api` + `streaming` | None — breaks dep graph |
+| `nomothetic.streaming` | Depends on `nomothetic.camera` | None |
+| `nomothetic.api` | Central hub; depends on `camera` | None |
+| `nomothetic.telemetry` | Depends on `nomon.__version__` | None — too lightweight |
 
 No Python module has external consumers or an independent release cadence.
 
 ## Interface Contract
 
-`nomon.api` communicates with the `nomon-hat` daemon via a **Unix domain socket
-at `/run/nomon-hat/nomon-hat.sock`** using **newline-delimited JSON (NDJSON)** framing.
+`nomothetic.api` communicates with the `nomopractic` daemon via a **Unix domain socket
+at `/run/nomopractic/nomopractic.sock`** using **newline-delimited JSON (NDJSON)** framing.
 
 NDJSON was chosen over length-prefixed framing because:
 - Text-based — debuggable with `socat` or `nc`
 - No 4-byte length-field parsing required
 - Messages are short (< 1 kB); savings from length-prefix are negligible
 
-`nomon.api` exposes HAT operations under `/api/hat/...` endpoints that call
-methods on `nomon.hat.HatClient`. The full schema and all methods are
+`nomothetic.api` exposes HAT operations under `/api/hat/...` endpoints that call
+methods on `nomothetic.hat.HatClient`. The full schema and all methods are
 specified in [docs/hat_ipc_schema.md](../hat_ipc_schema.md).
 
 ## Consequences
 
-- A new `nomon-hat` repository will be created when Phase 5 begins
-- The `nomon-hat` build produces a cross-compiled ARM binary (CI must include
+- A new `nomopractic` repository will be created when Phase 5 begins
+- The `nomopractic` build produces a cross-compiled ARM binary (CI must include
   `cross` or equivalent ARM cross-compilation tooling)
-- OTA updates for `nomon-hat` use artifact-based deployment (not git-based),
+- OTA updates for `nomopractic` use artifact-based deployment (not git-based),
   coordinated via a job document if AWS IoT Jobs is adopted (see ADR-007)
-- `nomon.api` gains a dependency on the local IPC socket — HAT endpoints
-  return `503 Service Unavailable` if `nomon-hat` is not running
+- `nomothetic.api` gains a dependency on the local IPC socket — HAT endpoints
+  return `503 Service Unavailable` if `nomopractic` is not running
 - Phase 5 in the roadmap is updated to reflect Rust + separate repo

@@ -3,9 +3,9 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nomon"
+name = "nomothetic"
 version = "0.1.0"
-description = "Controls, telemetry, & updates for the nomon fleet."
+description = "Comms & telemetry for the nomon fleet."
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
@@ -66,13 +66,13 @@ telemetry = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Perceptua/nomon"
-Documentation = "https://github.com/Perceptua/nomon"
-Repository = "https://github.com/Perceptua/nomon.git"
-Issues = "https://github.com/Perceptua/nomon/issues"
+Homepage = "https://github.com/Perceptua/nomothetic"
+Documentation = "https://github.com/Perceptua/nomothetic"
+Repository = "https://github.com/Perceptua/nomothetic.git"
+Issues = "https://github.com/Perceptua/nomothetic/issues"
 
 [tool.setuptools]
-packages = ["nomon"]
+packages = ["nomothetic"]
 
 [tool.setuptools.package-dir]
 "" = "src"
@@ -101,7 +101,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["nomon"]
+known-first-party = ["nomothetic"]
 
 [tool.mypy]
 python_version = "3.9"

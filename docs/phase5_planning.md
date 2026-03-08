@@ -19,11 +19,10 @@ or binary-size benefits over the current Python implementation.
 
 | Module | Bottleneck | Rust Benefit |
 |---|---|---|
-| `nomon.camera` | libcamera (C++) via picamera2 | **None** — would be FFI to the same native code |
-| `nomon.streaming` | Camera sensor frame rate | **None** — Flask is not the constraint |
-| `nomon.api` | Camera hardware + network latency | **Marginal** — smaller RSS and faster cold start on Pi |
-| `nomon.telemetry` | Network I/O + sleep interval | **None** — pure I/O wait |
-| `nomon.updater` | External process I/O (git, systemctl) | **None** — Python is not the bottleneck |
+| `nomothetic.camera` | libcamera (C++) via picamera2 | **None** — would be FFI to the same native code |
+| `nomothetic.streaming` | Camera sensor frame rate | **None** — Flask is not the constraint |
+| `nomothetic.api` | Camera hardware + network latency | **Marginal** — smaller RSS and faster cold start on Pi |
+| `nomothetic.telemetry` | Network I/O + sleep interval | **None** — pure I/O wait |
 
 ### Conclusion
 
@@ -32,7 +31,7 @@ almost entirely hardware I/O-bound or delegates to native libraries (libcamera).
 Python's overhead is not the limiting factor in any existing module.
 
 The one module with a credible (though not overwhelming) Rust case is
-`nomon.api` — running FastAPI + uvicorn + picamera2 + paho-mqtt together
+`nomothetic.api` — running FastAPI + uvicorn + picamera2 + paho-mqtt together
 consumes ~80–150 MB RSS on a 512 MB Pi Zero, whereas a Rust binary (axum)
 would use ~5–15 MB. However, the cost of losing picamera2 FFI, Pydantic
 models, OpenAPI auto-generation (ADR-002), and adding ARM cross-compilation
@@ -48,29 +47,25 @@ Raspberry Pi GPIO/SPI/I2C crate) delivers memory safety and deterministic
 latency without a daemon dependency like `pigpio`.
 
 **Decision:** Phase 5 HAT drivers will be implemented in Rust in a separate
-repository (`nomon-hat`). See ADR-006.
+repository (`nomopractic`). See ADR-006.
 
 ---
 
 ## 2 — Repository Strategy
 
-### Why the Python Monorepo Must Stay Together
-
-The OTA `UpdateManager` (Phase 4) updates a device by executing
-`git fetch + reset --hard` on a **single git repository**, then restarts one
-systemd service. The update unit is the repository — everything in it moves
-atomically to a new SHA.
-
-Splitting any Python module into its own repo would require:
-
-- A second manifest URL + second `UpdateManager` instance per device
-- Two independent `git reset --hard` operations with no atomicity guarantee —
-  the device can be transiently in a mixed-version state
-- Cross-repo version pinning in `pyproject.toml` (manual maintenance + CI)
-- The pre-flight `import nomon` check would no longer validate the whole system
+### Why the Python Monorepo Stays Together
 
 None of the Python modules have external consumers or independent release
-cadences, so there is zero benefit to splitting them.
+cadences — there is no benefit to splitting them into separate repositories.
+
+The shared `Camera` dependency (`nomothetic.camera`) is used by both
+`nomothetic.streaming` and `nomothetic.api`; keeping them together ensures
+consistent versions without cross-repo pinning.
+
+Updates are applied to the whole repository atomically: a single `git pull`
+on the device updates all modules simultaneously. When the fleet adopts AWS
+IoT Jobs for OTA (see ADR-007), a single job document will specify the version
+for this repository; splitting modules would require separate job targets.
 
 ### Why the Rust HAT Code Is a Separate Repo
 
@@ -78,35 +73,34 @@ cadences, so there is zero benefit to splitting them.
    not a pip-installable package
 2. **Different update pipeline** — binary artifact download + SHA-256 verify +
    atomic file swap (not `git reset --hard`)
-3. **Different systemd service** — runs as `nomon-hat.service`, independent of
-   `nomon.service`
+3. **Different systemd service** — runs as `nomopractic.service`, independent of
+   `nomothetic.service`
 4. **Different release cadence** — HAT firmware changes independently of the
    Python REST API
 
 ### Final Layout
 
 ```
-nomon/              ← Python monorepo (this repo — keep everything here)
-  nomon.camera
-  nomon.streaming
-  nomon.api
-  nomon.telemetry
-  nomon.updater
-  nomon.hat         ← IPC client for nomon-hat (Phase 5)
+nomothetic/              ← Python monorepo (this repo — keep everything here)
+  nomothetic.camera
+  nomothetic.streaming
+  nomothetic.api
+  nomothetic.telemetry
+  nomothetic.hat         ← IPC client for nomopractic (Phase 5)
 
-nomon-hat/          ← Separate Rust repo (Phase 5)
+nomopractic/          ← Separate Rust repo (Phase 5)
   Cargo.toml
   src/main.rs       ← HAT daemon
-  systemd/          ← nomon-hat.service unit file
+  systemd/          ← nomopractic.service unit file
   scripts/          ← OTA binary deploy script
 ```
 
 ### Interface Between Rust and Python
 
-`nomon.api` communicates with `nomon-hat` via a **Unix domain socket** at
-`/run/nomon-hat/nomon-hat.sock`. This is the confirmed approach (see ADR-006).
+`nomothetic.api` communicates with `nomopractic` via a **Unix domain socket** at
+`/run/nomopractic/nomopractic.sock`. This is the confirmed approach (see ADR-006).
 
-The Python client is `nomon.hat.HatClient`. It uses **newline-delimited JSON
+The Python client is `nomothetic.hat.HatClient`. It uses **newline-delimited JSON
 (NDJSON)** framing: each request and response is a single JSON object followed
 by `\n`. Full schema: [docs/hat_ipc_schema.md](hat_ipc_schema.md).
 
@@ -118,13 +112,13 @@ kernel-enforced process isolation.
 
 ## 4 — Phase 5 Milestones
 
-### Milestone 5.1 — IPC Schema & nomon-hat Scaffold
+### Milestone 5.1 — IPC Schema & nomopractic Scaffold
 
 **Deliverables:**
 - [x] `docs/hat_ipc_schema.md` — full IPC protocol spec
-- [x] `docs/nomon_hat_crate.md` — Rust crate layout and dependency choices
+- [x] `docs/nomopractic_crate.md` — Rust crate layout and dependency choices
 - [x] `docs/hat_python_client.md` — Python `HatClient` module design
-- [ ] `nomon-hat` repository created with `Cargo.toml`, `src/main.rs`, systemd unit
+- [ ] `nomopractic` repository created with `Cargo.toml`, `src/main.rs`, systemd unit
 - [ ] `config.rs` + `ipc/` modules scaffolded (accepts connections, echoes health response)
 - [ ] CI workflow: cross-compile `aarch64-unknown-linux-gnu` binary
 
@@ -132,7 +126,7 @@ kernel-enforced process isolation.
 
 ### Milestone 5.2 — Battery + Servo Control (P0)
 
-**Deliverables (nomon-hat Rust):**
+**Deliverables (nomopractic Rust):**
 - [ ] `hat/i2c.rs` — low-level I2C read/write helpers
 - [ ] `hat/adc.rs` — ADC channel read command scheme
 - [ ] `hat/battery.rs` — `get_battery_voltage` using ADC A4, scaling × 3
@@ -141,9 +135,9 @@ kernel-enforced process isolation.
 - [ ] IPC methods: `get_battery_voltage`, `set_servo_pulse_us`, `set_servo_angle`
 
 **Deliverables (nomon Python):**
-- [ ] `src/nomon/hat.py` — `HatClient` with `get_battery_voltage`, `set_servo_angle`
+- [ ] `src/nomothetic/hat.py` — `HatClient` with `get_battery_voltage`, `set_servo_angle`
 - [ ] `tests/test_hat.py` — mock socket tests (no hardware required)
-- [ ] `nomon.api` endpoints: `GET /api/hat/battery`, `POST /api/hat/servo`
+- [ ] `nomothetic.api` endpoints: `GET /api/hat/battery`, `POST /api/hat/servo`
 
 **Exit criteria:** Mobile app can read battery voltage and command servo angle
 on real Pi hardware.
@@ -154,16 +148,15 @@ on real Pi hardware.
 - [ ] `hat/gpio.rs` — named GPIO pin map (D4, D5, MCURST, SW, LED)
 - [ ] `reset.rs` — MCU reset procedure (BCM5 assert/deassert)
 - [ ] IPC method: `reset_mcu`
-- [ ] `nomon.api` endpoint: `POST /api/hat/reset`
+- [ ] `nomothetic.api` endpoint: `POST /api/hat/reset`
 - [ ] OTA binary deploy script (`scripts/deploy.sh`)
 
-### Milestone 5.4 — Fleet OTA for nomon-hat
+### Milestone 5.4 — Fleet OTA for nomopractic
 
 **Deliverables:**
 - [ ] GitHub Releases CI for `aarch64-unknown-linux-gnu` binary
 - [ ] SHA-256 artifact manifest endpoint on management server
 - [ ] `scripts/deploy.sh` for atomic binary swap
-- [ ] Phase 6 AWS IoT job document extended to include `nomon_hat_version`
 
 ---
 
@@ -182,9 +175,9 @@ both the Python package and the Rust binary simultaneously:
 {
   "nomon_version": "0.5.0",
   "nomon_git_sha": "abc123",
-  "nomon_hat_version": "1.2.0",
-  "nomon_hat_artifact_url": "s3://...",
-  "nomon_hat_sha256": "def456"
+  "nomopractic_version": "1.2.0",
+  "nomopractic_artifact_url": "s3://...",
+  "nomopractic_sha256": "def456"
 }
 ```
 
@@ -193,17 +186,17 @@ fleet intent.
 
 **What changes on-device:**
 
-| Concern | Current (`nomon.updater`) | With AWS IoT Jobs |
+| Concern | Manual (SSH + git pull) | With AWS IoT Jobs |
 |---|---|---|
-| Update trigger | Poll manifest URL (pull) | IoT Core MQTT push |
-| Update mechanism | `git fetch + reset --hard` | S3 artifact download |
-| Verification | git SHA + import check | SHA-256 + health check |
-| Multi-repo coord | Not supported | Job document JSON |
+| Update trigger | Manual SSH | IoT Core MQTT push |
+| Update mechanism | `git pull` | S3 artifact download |
+| Verification | - | SHA-256 + health check |
+| Multi-repo coord | Sequential SSH per repo | Job document JSON |
 | Rollback | `git reset --hard` | Job failure report + script |
 | Telemetry broker | Any MQTT broker | AWS IoT Core (same paho-mqtt) |
-| On-device extra | Nothing (stdlib only) | AWS IoT Device SDK (~5 MB) |
+| On-device extra | Nothing | AWS IoT Device SDK (~5 MB) |
 
-**Migration path:** `nomon.telemetry` already has MQTT connection logic via
+**Migration path:** `nomothetic.telemetry` already has MQTT connection logic via
 `paho-mqtt`; the IoT Jobs subscription adds a second topic on the same broker
 connection, using X.509 certificate auth instead of username/password.
 

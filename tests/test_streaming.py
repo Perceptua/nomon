@@ -27,14 +27,14 @@ mock_flask_module.render_template_string = MagicMock()
 
 sys.modules["flask"] = mock_flask_module
 
-from nomon.streaming import StreamServer  # noqa: E402
+from nomothetic.streaming import StreamServer  # noqa: E402
 
 
 class TestStreamServerInitialization:
     """Tests for StreamServer initialization."""
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_server_init_defaults(self, mock_flask, mock_camera):
         """Test server initialization with defaults."""
         mock_flask.return_value = MagicMock()
@@ -58,8 +58,8 @@ class TestStreamServerInitialization:
             encoder="h264",
         )
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_server_init_custom_params(self, mock_flask, mock_camera):
         """Test server initialization with custom parameters."""
         mock_flask.return_value = MagicMock()
@@ -82,8 +82,8 @@ class TestStreamServerInitialization:
         assert server.fps == 15
         assert server.encoder == "mjpeg"
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_server_init_invalid_port_low(self, mock_flask, mock_camera):
         """Test server initialization with port too low."""
         mock_flask.return_value = MagicMock()
@@ -92,8 +92,8 @@ class TestStreamServerInitialization:
         with pytest.raises(ValueError, match="Port must be between"):
             StreamServer(port=0)
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_server_init_invalid_port_high(self, mock_flask, mock_camera):
         """Test server initialization with port too high."""
         mock_flask.return_value = MagicMock()
@@ -102,14 +102,14 @@ class TestStreamServerInitialization:
         with pytest.raises(ValueError, match="Port must be between"):
             StreamServer(port=65536)
 
-    @patch("nomon.streaming.Flask", None)
+    @patch("nomothetic.streaming.Flask", None)
     def test_server_init_flask_not_available(self):
         """Test server initialization when Flask is not available."""
         with pytest.raises(RuntimeError, match="Flask not available"):
             StreamServer()
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_server_repr(self, mock_flask, mock_camera):
         """Test server string representation."""
         mock_flask.return_value = MagicMock()
@@ -134,8 +134,8 @@ class TestStreamServerInitialization:
 class TestStreamServerFlaskSetup:
     """Tests for Flask app configuration."""
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_flask_routes_registered(self, mock_flask, mock_camera):
         """Test that Flask routes are registered."""
         mock_app = MagicMock()
@@ -157,9 +157,9 @@ class TestStreamServerFlaskSetup:
 class TestStreamServerViewerPage:
     """Tests for HTML viewer page rendering."""
 
-    @patch("nomon.streaming.render_template_string")
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.render_template_string")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_viewer_renders_template(self, mock_flask, mock_camera, mock_render):
         """Test that viewer endpoint renders template."""
         mock_app = MagicMock()
@@ -186,9 +186,9 @@ class TestStreamServerViewerPage:
 class TestStreamServerMJPEGStream:
     """Tests for MJPEG streaming endpoint."""
 
-    @patch("nomon.streaming.Response")
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Response")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_stream_endpoint_returns_response(self, mock_flask, mock_camera, mock_response):
         """Test that stream endpoint returns Flask Response."""
         mock_app = MagicMock()
@@ -210,8 +210,8 @@ class TestStreamServerMJPEGStream:
         assert "multipart/x-mixed-replace" in str(call_args)
         assert "boundary=frame" in str(call_args)
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_stream_endpoint_frame_format(self, mock_flask, mock_camera):
         """Test that stream endpoint returns Response object."""
         mock_app = MagicMock()
@@ -234,8 +234,8 @@ class TestStreamServerMJPEGStream:
 class TestStreamServerLifecycle:
     """Tests for server lifecycle management."""
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_close_cleans_up_camera(self, mock_flask, mock_camera):
         """Test that close() cleans up the camera."""
         mock_app = MagicMock()
@@ -248,8 +248,8 @@ class TestStreamServerLifecycle:
 
         mock_cam.close.assert_called_once()
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_background_thread_starts(self, mock_flask, mock_camera):
         """Test that background thread can be started."""
         mock_app = MagicMock()
@@ -267,8 +267,8 @@ class TestStreamServerLifecycle:
             assert hasattr(thread, "join")
             assert thread.daemon is True
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_start_calls_flask_run(self, mock_flask, mock_camera):
         """Test that start() calls Flask run()."""
         mock_app = MagicMock()
@@ -289,8 +289,8 @@ class TestStreamServerLifecycle:
                 use_reloader=False,
             )
 
-    @patch("nomon.streaming.Camera")
-    @patch("nomon.streaming.Flask")
+    @patch("nomothetic.streaming.Camera")
+    @patch("nomothetic.streaming.Flask")
     def test_start_with_debug(self, mock_flask, mock_camera):
         """Test that start() respects debug parameter."""
         mock_app = MagicMock()

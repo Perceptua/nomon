@@ -8,7 +8,7 @@ install-dev:
 	pip install -r requirements-dev.txt
 
 test:
-	pytest tests/ -v --cov=src/nomon --cov-report=html
+	pytest tests/ -v --cov=src/nomothetic --cov-report=html
 
 lint:
 	ruff check src/ tests/
