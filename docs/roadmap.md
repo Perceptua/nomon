@@ -9,15 +9,13 @@
 | 2 | HTTPS REST API | ✅ Complete |
 | 2.5 | Auth & Rate Limiting | 🔲 Optional / Deferred |
 | 3 | MQTT Telemetry | ✅ Complete |
-| 4 | OTA Update Mechanism | ✅ Complete |
 | 5 | HAT Module Driver (Rust) | 🔲 Planned |
-| 6 | AWS IoT Jobs Migration | 🔲 Planned |
 
 ---
 
 ## Completed Phases
 
-### Phase 1 — Camera Module (`nomon.camera`)
+### Phase 1 — Camera Module (`nomothetic.camera`)
 
 **Deliverables:**
 - `Camera` class wrapping `picamera2` for OV5647 sensor
@@ -34,7 +32,7 @@
 
 ---
 
-### Phase 1.5 — MJPEG Stream Server (`nomon.streaming`)
+### Phase 1.5 — MJPEG Stream Server (`nomothetic.streaming`)
 
 **Deliverables:**
 - `StreamServer` class using Flask
@@ -46,7 +44,7 @@
 
 ---
 
-### Phase 2 — HTTPS REST API (`nomon.api`)
+### Phase 2 — HTTPS REST API (`nomothetic.api`)
 
 **Deliverables:**
 - `APIServer` class using FastAPI + uvicorn
@@ -62,12 +60,12 @@
 
 ---
 
-### Phase 3 — MQTT Telemetry (`nomon.telemetry`)
+### Phase 3 — MQTT Telemetry (`nomothetic.telemetry`)
 
 **Deliverables:**
 - `TelemetryPublisher` class using `paho-mqtt` 2.x
 - Background daemon thread (non-blocking, REST API unaffected)
-- Structured JSON telemetry payload (device ID, camera status, nomon version, UTC timestamp)
+- Structured JSON telemetry payload (device ID, camera status, nomothetic version, UTC timestamp)
 - Configurable broker host/port/topic/interval via `.env` (`NOMON_MQTT_*`)
 - Device ID auto-detection: env var → `/proc/cpuinfo` Pi serial → hostname
 - Reconnect/retry with exponential back-off (1 s → 60 s cap)
@@ -75,24 +73,6 @@
 - 23 passing tests
 
 **Test totals: 86 passing (20 camera + 14 streaming + 26 API + 3 integration + 23 telemetry)**
-
----
-
-### Phase 4 — OTA Update Mechanism (`nomon.updater`)
-
-**Deliverables:**
-- `UpdateManager` class in `nomon.updater`
-- Polls a remote JSON version manifest (stdlib `urllib.request` — no new deps)
-- Notify-only by default; `NOMON_UPDATE_AUTO_APPLY=true` for automatic apply
-- Update procedure: `git fetch + reset --hard` → SHA verification → pre-flight import check → `systemctl restart`
-- Rollback on failure: `git reset --hard <prev_hash>` before raising, so no broken state is left
-- Must not apply update while camera is recording
-- Background daemon thread (same pattern as `TelemetryPublisher`)
-- `from_env()` classmethod; all config via `NOMON_UPDATE_*` env vars
-- Three new REST endpoints: `GET /api/system/version`, `GET /api/system/update/status`, `POST /api/system/update/apply`
-- 60 new tests
-
-**Test totals: 146 passing (20 camera + 14 streaming + 38 API + 3 integration + 23 telemetry + 48 updater)**
 
 ---
 
@@ -122,26 +102,26 @@ Adds security layers on top of the existing API. Can be deferred since Tailscale
 **Hardware confirmed:** SunFounder Robot HAT V4 on I2C bus 1, address `0x14`.
 See [docs/microcontroller_setup.md](microcontroller_setup.md) for discovery details.
 
-**Language & repo:** Rust, in a new `nomon-hat` repository (see ADR-006).
+**Language & repo:** Rust, in a new `nomopractic` repository (see ADR-006).
 Rust is chosen for deterministic latency in GPIO/I2C timing-critical
 operations. The Python modules remain in this repo — they are I/O-bound
 and gain nothing from a Rust conversion.
 
-**IPC:** Unix domain socket at `/run/nomon-hat/nomon-hat.sock` with NDJSON framing.
+**IPC:** Unix domain socket at `/run/nomopractic/nomopractic.sock` with NDJSON framing.
 Full schema: [docs/hat_ipc_schema.md](hat_ipc_schema.md).
-Python client: `nomon.hat.HatClient` — see [docs/hat_python_client.md](hat_python_client.md).
-Rust crate plan: [docs/nomon_hat_crate.md](nomon_hat_crate.md).
+Python client: `nomothetic.hat.HatClient` — see [docs/hat_python_client.md](hat_python_client.md).
+Rust crate plan: [docs/nomopractic_crate.md](nomopractic_crate.md).
 
 **Milestone 5.1 — IPC Schema & Scaffold:**
 - [x] `docs/hat_ipc_schema.md` — full IPC protocol spec
-- [x] `docs/nomon_hat_crate.md` — Rust crate layout
+- [x] `docs/nomopractic_crate.md` — Rust crate layout
 - [x] `docs/hat_python_client.md` — Python client design
-- [ ] `nomon-hat` repository scaffolded; health IPC working on Pi
+- [ ] `nomopractic` repository scaffolded; health IPC working on Pi
 
 **Milestone 5.2 — Battery + Servo (P0 deliverables):**
-- [ ] `nomon-hat`: I2C, ADC, battery voltage, PWM, servo angle + TTL watchdog
-- [ ] `nomon.hat.HatClient` with `get_battery_voltage`, `set_servo_angle`
-- [ ] `nomon.api` endpoints: `GET /api/hat/battery`, `POST /api/hat/servo`
+- [ ] `nomopractic`: I2C, ADC, battery voltage, PWM, servo angle + TTL watchdog
+- [ ] `nomothetic.hat.HatClient` with `get_battery_voltage`, `set_servo_angle`
+- [ ] `nomothetic.api` endpoints: `GET /api/hat/battery`, `POST /api/hat/servo`
 - [ ] Mock-socket tests in `tests/test_hat.py`
 
 **Milestone 5.3 — MCU Reset + GPIO (P1):**
@@ -150,32 +130,14 @@ Rust crate plan: [docs/nomon_hat_crate.md](nomon_hat_crate.md).
 
 **Design constraints:**
 - Cross-compiled for `aarch64-unknown-linux-gnu` (CI uses `cross`)
-- `nomon.api` HAT endpoints return `503 Service Unavailable` if daemon not running
+- `nomothetic.api` HAT endpoints return `503 Service Unavailable` if daemon not running
 - Python tests mock the IPC socket — testable on Windows/macOS
-
----
-
-### Phase 6 — AWS IoT Jobs Migration (Planned)
-
-Replaces the current `nomon.updater` polling-based OTA strategy with
-push-based updates via AWS IoT Jobs. See ADR-007.
-
-**Candidate deliverables:**
-- [ ] Refactor `nomon.updater` to subscribe to AWS IoT Jobs MQTT topic
-- [ ] Artifact-based deployment (S3 download) instead of `git fetch + reset --hard`
-- [ ] Multi-repo coordination: single job document specifies versions for both `nomon` (Python) and `nomon-hat` (Rust)
-- [ ] X.509 certificate provisioning per device (replaces Tailscale-only trust for update channel)
-- [ ] Consolidate MQTT connections: telemetry + job subscription on same AWS IoT Core broker
-- [ ] Preserve existing REST endpoints (`/api/system/version`, `/api/system/update/status`, `/api/system/update/apply`)
-
-**Dependency:** AWS IoT Device SDK for Python (~5 MB). Greengrass v2 is
-explicitly **not** used due to JVM memory requirements on Pi Zero hardware.
 
 ---
 
 ## Mobile App
 
-Developed in a separate repository. Consumes the `nomon` REST API.
+Developed in a separate repository. Consumes the `nomothetic` REST API.
 
 **Expected interface:**
 - HTTPS requests to `https://<pi-tailscale-ip>:8443`
@@ -195,6 +157,6 @@ Developed in a separate repository.
 - Object storage (S3-compatible) for release artifacts
 - Admin dashboard for fleet monitoring
 
-**AWS IoT path (Phase 6):** If AWS IoT is adopted, the management server uses
+**AWS IoT path:** If AWS IoT is adopted, the management server uses
 AWS IoT Core as the MQTT broker and AWS IoT Jobs for fleet update dispatch.
 See ADR-007 and [docs/phase5_planning.md](phase5_planning.md).

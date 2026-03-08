@@ -36,4 +36,4 @@ Use **MJPEG over HTTP** with Flask's streaming response (`multipart/x-mixed-repl
 
 ## Future
 
-If a low-latency video preview is needed in the mobile app, consider adding a WebSocket or WebRTC endpoint to `nomon.api` as a separate Phase deliverable.
+If a low-latency video preview is needed in the mobile app, consider adding a WebSocket or WebRTC endpoint to `nomothetic.api` as a separate Phase deliverable.

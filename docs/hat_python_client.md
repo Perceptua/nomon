@@ -1,14 +1,14 @@
-# nomon.hat — Python Client Module
+# nomothetic.hat — Python Client Module
 
 ## Overview
 
-`nomon.hat` is a thin Python module that connects `nomon.api` to the
-`nomon-hat` Rust daemon over the Unix domain socket IPC defined in
+`nomothetic.hat` is a thin Python module that connects `nomothetic.api` to the
+`nomopractic` Rust daemon over the Unix domain socket IPC defined in
 [hat_ipc_schema.md](hat_ipc_schema.md).
 
 **Key design principle:** The Python client contains *no register logic*. It
 does not know about I2C addresses, PWM prescalers, ADC scaling, or servo
-pulse widths. All hardware knowledge lives in `nomon-hat` (Rust). The Python
+pulse widths. All hardware knowledge lives in `nomopractic` (Rust). The Python
 client only:
 
 1. Opens and manages the socket connection
@@ -21,11 +21,11 @@ client only:
 ## Module Location
 
 ```
-src/nomon/
+src/nomothetic/
 └── hat.py          ← HatClient class (this module)
 ```
 
-The module follows the same pattern as `nomon.camera`, `nomon.telemetry`, etc.:
+The module follows the same pattern as `nomothetic.camera`, `nomothetic.telemetry`, etc.:
 one file, one class, conditional import for the optional socket path.
 
 ---
@@ -34,12 +34,12 @@ one file, one class, conditional import for the optional socket path.
 
 ```python
 class HatClient:
-    """Client for the nomon-hat Unix domain socket IPC daemon.
+    """Client for the nomopractic Unix domain socket IPC daemon.
 
     Parameters
     ----------
     socket_path : str | Path, optional
-        Path to the Unix domain socket. Defaults to ``/run/nomon-hat/nomon-hat.sock``
+        Path to the Unix domain socket. Defaults to ``/run/nomopractic/nomopractic.sock``
         or the value of the ``NOMON_HAT_SOCKET_PATH`` environment variable.
     timeout_s : float, optional
         Per-request read timeout in seconds. Default: 2.0.
@@ -56,7 +56,7 @@ class HatClient:
     # ------------------------------------------------------------------ #
 
     def connect(self) -> None:
-        """Open the socket connection to nomon-hat.
+        """Open the socket connection to nomopractic.
 
         Raises
         ------
@@ -172,7 +172,7 @@ class HatClient:
 
 ```python
 class HatError(Exception):
-    """Base exception for all nomon.hat errors.
+    """Base exception for all nomothetic.hat errors.
 
     Attributes
     ----------
@@ -187,7 +187,7 @@ class HatError(Exception):
 
 
 class HatConnectionError(HatError):
-    """Raised when the socket connection to nomon-hat cannot be established
+    """Raised when the socket connection to nomopractic cannot be established
     or is lost during a request.
 
     code is always ``"CONNECTION_ERROR"``.
@@ -252,7 +252,7 @@ correlation in logs.
 ### Basic usage (context manager)
 
 ```python
-from nomon.hat import HatClient
+from nomothetic.hat import HatClient
 
 with HatClient() as hat:
     voltage = hat.get_battery_voltage()
@@ -265,7 +265,7 @@ with HatClient() as hat:
 
 ```python
 import asyncio
-from nomon.hat import HatClient
+from nomothetic.hat import HatClient
 
 async def hold_angle(hat: HatClient, channel: int, angle: float) -> None:
     """Refresh servo position every 200 ms to keep TTL alive."""
@@ -274,18 +274,18 @@ async def hold_angle(hat: HatClient, channel: int, angle: float) -> None:
         await asyncio.sleep(0.2)
 ```
 
-### Integration with nomon.api (FastAPI route handler)
+### Integration with nomothetic.api (FastAPI route handler)
 
 ```python
 # In nomon/api.py — HAT endpoint example
-from nomon.hat import HatClient, HatConnectionError, HatError
+from nomothetic.hat import HatClient, HatConnectionError, HatError
 
 _hat_client: HatClient | None = None
 
 @app.get("/api/hat/battery")
 async def get_battery() -> dict:
     if _hat_client is None:
-        raise HTTPException(503, "nomon-hat daemon not available")
+        raise HTTPException(503, "nomopractic daemon not available")
     try:
         voltage = await asyncio.to_thread(_hat_client.get_battery_voltage)
         return {"voltage_v": voltage, "timestamp": utc_now()}
@@ -298,10 +298,10 @@ async def get_battery() -> dict:
 ### Daemon availability check at startup
 
 ```python
-from nomon.hat import HatClient, HatConnectionError
+from nomothetic.hat import HatClient, HatConnectionError
 
 def probe_hat_daemon(socket_path: str) -> bool:
-    """Return True if nomon-hat is running and reachable."""
+    """Return True if nomopractic is running and reachable."""
     try:
         with HatClient(socket_path=socket_path) as hat:
             result = hat.health()
@@ -324,8 +324,8 @@ import socket, threading, json, tempfile, os, pytest
 
 @pytest.fixture
 def mock_hat_socket(tmp_path):
-    """Start a minimal fake nomon-hat server in a background thread."""
-    sock_path = str(tmp_path / "nomon-hat.sock")
+    """Start a minimal fake nomopractic server in a background thread."""
+    sock_path = str(tmp_path / "nomopractic.sock")
 
     def _server():
         srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -353,7 +353,7 @@ def mock_hat_socket(tmp_path):
     yield sock_path
 
 def test_get_battery_voltage(mock_hat_socket):
-    from nomon.hat import HatClient
+    from nomothetic.hat import HatClient
     with HatClient(socket_path=mock_hat_socket) as hat:
         v = hat.get_battery_voltage()
     assert v == pytest.approx(7.5)
@@ -365,8 +365,8 @@ All `HatClient` tests use this fixture — no hardware required.
 
 ## What NOT to Put in This Module
 
-- I2C register addresses or ADC scaling formulae — that belongs in `nomon-hat`
-- PWM prescaler calculations — that belongs in `nomon-hat`
-- GPIO BCM pin numbers — that belongs in `nomon-hat`
+- I2C register addresses or ADC scaling formulae — that belongs in `nomopractic`
+- PWM prescaler calculations — that belongs in `nomopractic`
+- GPIO BCM pin numbers — that belongs in `nomopractic`
 - Retry logic for hardware errors — let `HatError` propagate up to the caller
-- Business logic (e.g., "low battery warning") — belongs in `nomon.api` routes
+- Business logic (e.g., "low battery warning") — belongs in `nomothetic.api` routes

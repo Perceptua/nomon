@@ -35,11 +35,11 @@ def _make_mock_mqtt():
 
 @pytest.fixture
 def mock_mqtt_module():
-    """Patch nomon.telemetry.mqtt and CallbackAPIVersion with safe mocks."""
+    """Patch nomothetic.telemetry.mqtt and CallbackAPIVersion with safe mocks."""
     mock_mqtt, mock_client_instance, mock_result = _make_mock_mqtt()
     with (
-        patch("nomon.telemetry.mqtt", mock_mqtt),
-        patch("nomon.telemetry.CallbackAPIVersion", mock_mqtt.enums.CallbackAPIVersion),
+        patch("nomothetic.telemetry.mqtt", mock_mqtt),
+        patch("nomothetic.telemetry.CallbackAPIVersion", mock_mqtt.enums.CallbackAPIVersion),
     ):
         yield mock_mqtt, mock_client_instance, mock_result
 
@@ -47,7 +47,7 @@ def mock_mqtt_module():
 @pytest.fixture
 def publisher(mock_mqtt_module):
     """A TelemetryPublisher with mocked paho-mqtt."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     return TelemetryPublisher(broker="localhost")
 
@@ -71,7 +71,7 @@ def mock_camera():
 
 def test_constructor_defaults(mock_mqtt_module):
     """Default parameters are applied correctly."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="broker.local")
     assert pub.broker == "broker.local"
@@ -84,7 +84,7 @@ def test_constructor_defaults(mock_mqtt_module):
 
 def test_constructor_custom_params(mock_mqtt_module):
     """Custom constructor parameters are stored."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(
         broker="10.0.0.1",
@@ -101,7 +101,7 @@ def test_constructor_custom_params(mock_mqtt_module):
 
 def test_constructor_explicit_device_id(mock_mqtt_module):
     """Explicit device_id overrides auto-detection."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost", device_id="my-device")
     assert pub.device_id == "my-device"
@@ -109,8 +109,8 @@ def test_constructor_explicit_device_id(mock_mqtt_module):
 
 def test_constructor_raises_without_paho():
     """ImportError raised when paho-mqtt is not installed."""
-    with patch("nomon.telemetry.mqtt", None):
-        from nomon.telemetry import TelemetryPublisher
+    with patch("nomothetic.telemetry.mqtt", None):
+        from nomothetic.telemetry import TelemetryPublisher
 
         with pytest.raises(ImportError, match="paho-mqtt is required"):
             TelemetryPublisher(broker="localhost")
@@ -123,7 +123,7 @@ def test_constructor_raises_without_paho():
 
 def test_from_env_reads_broker(mock_mqtt_module, monkeypatch):
     """from_env reads NOMON_MQTT_BROKER from environment."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.setenv("NOMON_MQTT_BROKER", "192.168.1.50")
     pub = TelemetryPublisher.from_env()
@@ -132,7 +132,7 @@ def test_from_env_reads_broker(mock_mqtt_module, monkeypatch):
 
 def test_from_env_reads_all_vars(mock_mqtt_module, monkeypatch):
     """from_env reads all NOMON_MQTT_* env vars."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.setenv("NOMON_MQTT_BROKER", "mybroker")
     monkeypatch.setenv("NOMON_MQTT_PORT", "8883")
@@ -149,7 +149,7 @@ def test_from_env_reads_all_vars(mock_mqtt_module, monkeypatch):
 
 def test_from_env_raises_without_broker(mock_mqtt_module, monkeypatch):
     """from_env raises ValueError when NOMON_MQTT_BROKER is not set."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.delenv("NOMON_MQTT_BROKER", raising=False)
     with pytest.raises(ValueError, match="NOMON_MQTT_BROKER"):
@@ -163,7 +163,7 @@ def test_from_env_raises_without_broker(mock_mqtt_module, monkeypatch):
 
 def test_get_device_id_from_env(monkeypatch):
     """get_device_id returns NOMON_DEVICE_ID when set."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.setenv("NOMON_DEVICE_ID", "my-pi-01")
     assert TelemetryPublisher.get_device_id() == "my-pi-01"
@@ -173,7 +173,7 @@ def test_get_device_id_hostname_fallback(monkeypatch):
     """get_device_id falls back to hostname when env and /proc/cpuinfo unavailable."""
     import socket
 
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.delenv("NOMON_DEVICE_ID", raising=False)
     with patch("builtins.open", side_effect=OSError("no such file")):
@@ -183,7 +183,7 @@ def test_get_device_id_hostname_fallback(monkeypatch):
 
 def test_get_device_id_from_cpuinfo(monkeypatch):
     """get_device_id parses serial from /proc/cpuinfo."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.delenv("NOMON_DEVICE_ID", raising=False)
     cpuinfo_content = "Hardware\t: BCM2835\nRevision\t: a22082\nSerial\t\t: 00000000deadbeef\n"
@@ -206,7 +206,7 @@ def test_get_device_id_cpuinfo_zero_serial_falls_back_to_hostname(monkeypatch):
     """get_device_id falls back to hostname when /proc/cpuinfo serial is all zeros."""
     import socket
 
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     monkeypatch.delenv("NOMON_DEVICE_ID", raising=False)
     cpuinfo_content = "Hardware\t: BCM2835\nRevision\t: a22082\nSerial\t\t: 0000000000000000\n"
@@ -241,7 +241,7 @@ def test_build_payload_without_camera(publisher):
 
 def test_build_payload_with_camera(mock_mqtt_module, mock_camera):
     """build_payload includes camera status when camera is provided."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost", camera=mock_camera)
     payload = pub.build_payload()
@@ -257,7 +257,7 @@ def test_build_payload_with_camera(mock_mqtt_module, mock_camera):
 
 def test_build_payload_camera_recording(mock_mqtt_module, mock_camera):
     """build_payload reflects recording state correctly."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_camera._is_recording = True
     pub = TelemetryPublisher(broker="localhost", camera=mock_camera)
@@ -277,7 +277,7 @@ def test_build_payload_camera_error_graceful(mock_mqtt_module):
     """build_payload handles broken camera gracefully."""
     from unittest.mock import PropertyMock
 
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     broken_camera = MagicMock()
     type(broken_camera)._is_recording = PropertyMock(side_effect=RuntimeError("hardware error"))
@@ -297,7 +297,7 @@ def test_build_payload_camera_error_graceful(mock_mqtt_module):
 
 def test_start_background_returns_thread(mock_mqtt_module, monkeypatch):
     """start_background returns a running daemon thread."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost", interval=999.0)
 
@@ -325,7 +325,7 @@ def test_stop_sets_event(publisher):
 
 def test_stop_calls_disconnect(mock_mqtt_module):
     """stop() calls disconnect() on the underlying MQTT client."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost")
@@ -335,7 +335,7 @@ def test_stop_calls_disconnect(mock_mqtt_module):
 
 def test_stop_ignores_disconnect_error(mock_mqtt_module):
     """stop() does not propagate exceptions raised by disconnect()."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     mock_client.disconnect.side_effect = OSError("already disconnected")
@@ -346,7 +346,7 @@ def test_stop_ignores_disconnect_error(mock_mqtt_module):
 
 def test_start_background_can_restart_after_stop(mock_mqtt_module):
     """start_background() clears the stop event so the publisher can be restarted."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost", interval=999.0)
 
@@ -373,7 +373,7 @@ def test_start_background_can_restart_after_stop(mock_mqtt_module):
 
 def test_publish_now_success(mock_mqtt_module):
     """publish_now returns True on successful publish."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, mock_result = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost")
@@ -386,7 +386,7 @@ def test_publish_now_success(mock_mqtt_module):
 
 def test_publish_now_failure_returns_false(mock_mqtt_module):
     """publish_now returns False when publish raises an exception."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, mock_result = mock_mqtt_module
     mock_client.connect.side_effect = ConnectionRefusedError("broker unreachable")
@@ -399,7 +399,7 @@ def test_publish_now_failure_returns_false(mock_mqtt_module):
 
 def test_publish_now_skips_connect_when_already_connected(mock_mqtt_module):
     """publish_now skips connect() when already connected."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost")
@@ -414,7 +414,7 @@ def test_publish_now_uses_correct_topic_payload_and_qos(mock_mqtt_module):
     """publish_now passes the configured topic, valid JSON payload, and QoS to publish()."""
     import json
 
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost", topic="fleet/pi-01", qos=0)
@@ -430,7 +430,7 @@ def test_publish_now_uses_correct_topic_payload_and_qos(mock_mqtt_module):
 
 def test_publish_now_returns_false_when_wait_for_publish_raises(mock_mqtt_module):
     """publish_now returns False if wait_for_publish() raises."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, mock_result = mock_mqtt_module
     mock_result.wait_for_publish.side_effect = RuntimeError("timeout")
@@ -442,7 +442,7 @@ def test_publish_now_returns_false_when_wait_for_publish_raises(mock_mqtt_module
 
 def test_publish_now_clears_connected_flag_on_failure(mock_mqtt_module):
     """publish_now resets _connected to False when publish() raises."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     mock_client.publish.side_effect = OSError("broker gone")
@@ -460,7 +460,7 @@ def test_publish_now_clears_connected_flag_on_failure(mock_mqtt_module):
 
 def test_on_connect_sets_connected_on_success(mock_mqtt_module):
     """_on_connect sets _connected=True when reason_code is not a failure."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost")
     pub._connected = False
@@ -474,7 +474,7 @@ def test_on_connect_sets_connected_on_success(mock_mqtt_module):
 
 def test_on_connect_clears_connected_on_failure(mock_mqtt_module):
     """_on_connect sets _connected=False when the broker refuses the connection."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost")
     pub._connected = True
@@ -488,7 +488,7 @@ def test_on_connect_clears_connected_on_failure(mock_mqtt_module):
 
 def test_on_disconnect_clears_connected(mock_mqtt_module):
     """_on_disconnect sets _connected=False."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     pub = TelemetryPublisher(broker="localhost")
     pub._connected = True
@@ -505,7 +505,7 @@ def test_on_disconnect_clears_connected(mock_mqtt_module):
 
 def test_backoff_doubles_on_reconnect_failure(mock_mqtt_module):
     """_run_loop doubles the backoff delay after each failed connect."""
-    from nomon.telemetry import _BACKOFF_BASE, TelemetryPublisher
+    from nomothetic.telemetry import _BACKOFF_BASE, TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost", interval=0.01)
@@ -530,7 +530,7 @@ def test_backoff_doubles_on_reconnect_failure(mock_mqtt_module):
 
 def test_backoff_capped_at_max(mock_mqtt_module):
     """Backoff delay does not exceed _BACKOFF_CAP when _run_loop retries."""
-    from nomon.telemetry import _BACKOFF_CAP, TelemetryPublisher
+    from nomothetic.telemetry import _BACKOFF_CAP, TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost", interval=0.01)
@@ -560,7 +560,7 @@ def test_backoff_capped_at_max(mock_mqtt_module):
 
 def test_run_loop_backoff_resets_after_successful_connect(mock_mqtt_module):
     """_run_loop resets backoff to _BACKOFF_BASE after a successful connect."""
-    from nomon.telemetry import _BACKOFF_BASE, TelemetryPublisher
+    from nomothetic.telemetry import _BACKOFF_BASE, TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost", interval=0.01)
@@ -598,7 +598,7 @@ def test_run_loop_backoff_resets_after_successful_connect(mock_mqtt_module):
 
 def test_run_loop_publish_failure_triggers_reconnect(mock_mqtt_module):
     """A publish error inside _run_loop sets _connected=False, causing a reconnect."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost", interval=0.01)
@@ -634,7 +634,7 @@ def test_run_loop_publish_failure_triggers_reconnect(mock_mqtt_module):
 
 def test_run_loop_calls_loop_stop_on_exit(mock_mqtt_module):
     """_run_loop calls loop_stop() when the stop event is set."""
-    from nomon.telemetry import TelemetryPublisher
+    from nomothetic.telemetry import TelemetryPublisher
 
     mock_mqtt, mock_client, _ = mock_mqtt_module
     pub = TelemetryPublisher(broker="localhost", interval=0.01)
@@ -660,11 +660,11 @@ def test_run_loop_calls_loop_stop_on_exit(mock_mqtt_module):
 
 
 def test_package_exports_telemetry_publisher(mock_mqtt_module):
-    """TelemetryPublisher is accessible from the nomon package."""
+    """TelemetryPublisher is accessible from the nomothetic package."""
     import importlib
 
-    import nomon
+    import nomothetic
 
-    importlib.reload(nomon)
-    assert hasattr(nomon, "TelemetryPublisher")
-    assert "TelemetryPublisher" in nomon.__all__
+    importlib.reload(nomothetic)
+    assert hasattr(nomothetic, "TelemetryPublisher")
+    assert "TelemetryPublisher" in nomothetic.__all__

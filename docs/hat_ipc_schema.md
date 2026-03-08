@@ -1,8 +1,8 @@
-# nomon-hat IPC Schema
+# nomopractic IPC Schema
 
 ## Overview
 
-`nomon.api` (Python) communicates with the `nomon-hat` daemon (Rust) through a
+`nomothetic.api` (Python) communicates with the `nomopractic` daemon (Rust) through a
 **Unix domain socket** using **newline-delimited JSON (NDJSON)** framing.
 
 This document is the interface contract between the two processes. Both sides
@@ -15,9 +15,9 @@ must implement this schema exactly; changes require coordinated releases.
 | Property | Value |
 |----------|-------|
 | Mechanism | Unix domain socket (SOCK_STREAM) |
-| Default path | `/run/nomon-hat/nomon-hat.sock` |
+| Default path | `/run/nomopractic/nomopractic.sock` |
 | Config override | `NOMON_HAT_SOCKET_PATH` env var |
-| Direction | Client-initiated (nomon.api connects; nomon-hat listens) |
+| Direction | Client-initiated (nomothetic.api connects; nomopractic listens) |
 | Connections | Short-lived per-request or persistent; daemon accepts multiple |
 
 The Unix domain socket was chosen over localhost HTTP because:
@@ -128,7 +128,7 @@ Returns daemon liveness and hardware connection status.
 |-------|------|-------------|
 | `schema_version` | string | IPC schema semver (see [Versioning](#versioning)); client should verify on connect |
 | `status` | `"ok"` \| `"degraded"` | `"ok"` if I2C link is up; `"degraded"` otherwise |
-| `version` | string | nomon-hat semver |
+| `version` | string | nomopractic semver |
 | `hat_address` | string | I2C address in use (hex string, e.g. `"0x14"`) |
 | `i2c_bus` | integer | Linux I2C bus number (default `1`) |
 | `uptime_s` | integer | Seconds since daemon start |
@@ -278,7 +278,7 @@ while holding_position:
 
 ```bash
 # Connect to daemon socket interactively
-socat - UNIX-CONNECT:/run/nomon-hat/nomon-hat.sock
+socat - UNIX-CONNECT:/run/nomopractic/nomopractic.sock
 
 # Type each line and press Enter:
 {"id":"1","method":"health","params":{}}\n
@@ -299,7 +299,7 @@ socat - UNIX-CONNECT:/run/nomon-hat/nomon-hat.sock
 ## Versioning
 
 The IPC schema follows **semantic versioning** independent of nomon and
-nomon-hat application versions:
+nomopractic application versions:
 
 | Change | Version bump |
 |--------|-------------|
@@ -321,6 +321,6 @@ Linux user running the Python API must be a member of the `nomon` group:
 ```bash
 # One-time device setup
 sudo groupadd -r nomon
-sudo usermod -aG nomon pi   # or whatever user runs nomon.api
-sudo systemctl restart nomon-hat
+sudo usermod -aG nomon pi   # or whatever user runs nomothetic.api
+sudo systemctl restart nomopractic
 ```

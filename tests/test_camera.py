@@ -23,13 +23,13 @@ mock_picamera2_module.encoders = mock_encoders
 sys.modules["picamera2"] = mock_picamera2_module
 sys.modules["picamera2.encoders"] = mock_encoders
 
-from nomon.camera import Camera  # noqa: E402
+from nomothetic.camera import Camera  # noqa: E402
 
 
 class TestCameraInitialization:
     """Tests for camera initialization."""
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_camera_init_defaults(self, mock_picamera2):
         """Test camera initialization with defaults."""
         mock_picamera2.return_value = MagicMock()
@@ -43,7 +43,7 @@ class TestCameraInitialization:
         assert camera.directory == Path.cwd()
         assert camera._is_recording is False
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_camera_init_custom_params(self, mock_picamera2):
         """Test camera initialization with custom params."""
         mock_picamera2.return_value = MagicMock()
@@ -63,7 +63,7 @@ class TestCameraInitialization:
         assert camera.encoder == "mjpeg"
         assert camera.directory == Path("/tmp/videos")
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_camera_init_failure(self, mock_picamera2):
         """Test camera initialization failure."""
         mock_picamera2.side_effect = Exception("Camera not found")
@@ -71,7 +71,7 @@ class TestCameraInitialization:
         with pytest.raises(RuntimeError):
             Camera()
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_camera_init_invalid_encoder(
         self,
         mock_picamera2,
@@ -82,7 +82,7 @@ class TestCameraInitialization:
         with pytest.raises(ValueError):
             Camera(encoder="invalid")
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_camera_repr(self, mock_picamera2):
         """Test camera string representation."""
         mock_picamera2.return_value = MagicMock()
@@ -103,7 +103,7 @@ class TestCameraInitialization:
 class TestImageCapture:
     """Tests for image capture functionality."""
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_capture_image_success(self, mock_picamera2):
         """Test successful image capture."""
         mock_cam = MagicMock()
@@ -118,7 +118,7 @@ class TestImageCapture:
             mock_cam.capture_file.assert_called()
             mock_cam.stop.assert_called()
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_capture_image_not_initialized(self, mock_picamera2):
         """Test capture when camera not initialized."""
         mock_picamera2.return_value = MagicMock()
@@ -128,7 +128,7 @@ class TestImageCapture:
         with pytest.raises(RuntimeError):
             camera.capture_image("test.jpg")
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_capture_image_rejects_paths(self, mock_picamera2):
         """Test that paths with separators are rejected."""
         mock_picamera2.return_value = MagicMock()
@@ -137,7 +137,7 @@ class TestImageCapture:
         with pytest.raises(ValueError, match="path separators"):
             camera.capture_image("subdir/test.jpg")
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_capture_image_rejects_absolute_paths(
         self,
         mock_picamera2,
@@ -155,8 +155,8 @@ class TestImageCapture:
 class TestVideoRecording:
     """Tests for video recording functionality."""
 
-    @patch("nomon.camera.H264Encoder")
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.H264Encoder")
+    @patch("nomothetic.camera.Picamera2")
     def test_start_recording_h264(
         self,
         mock_picamera2,
@@ -175,8 +175,8 @@ class TestVideoRecording:
             mock_cam.start.assert_called()
             mock_cam.start_recording.assert_called()
 
-    @patch("nomon.camera.MJPEGEncoder")
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.MJPEGEncoder")
+    @patch("nomothetic.camera.Picamera2")
     def test_start_recording_mjpeg(
         self,
         mock_picamera2,
@@ -195,7 +195,7 @@ class TestVideoRecording:
             mock_cam.start.assert_called()
             mock_cam.start_recording.assert_called()
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_stop_recording_success(self, mock_picamera2):
         """Test successful recording stop."""
         mock_cam = MagicMock()
@@ -203,7 +203,7 @@ class TestVideoRecording:
         mock_cam.create_video_configuration.return_value = {}
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("nomon.camera.H264Encoder"):
+            with patch("nomothetic.camera.H264Encoder"):
                 camera = Camera(directory=tmpdir)
                 camera.start_recording("test.mp4")
                 camera.stop_recording()
@@ -212,7 +212,7 @@ class TestVideoRecording:
             mock_cam.stop_recording.assert_called()
             mock_cam.stop.assert_called()
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_stop_recording_when_not_recording(
         self,
         mock_picamera2,
@@ -224,8 +224,8 @@ class TestVideoRecording:
         with pytest.raises(RuntimeError):
             camera.stop_recording()
 
-    @patch("nomon.camera.H264Encoder")
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.H264Encoder")
+    @patch("nomothetic.camera.Picamera2")
     def test_double_start_recording(
         self,
         mock_picamera2,
@@ -243,7 +243,7 @@ class TestVideoRecording:
             with pytest.raises(RuntimeError):
                 camera.start_recording("test2.mp4")
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_start_recording_rejects_paths(
         self,
         mock_picamera2,
@@ -255,7 +255,7 @@ class TestVideoRecording:
         with pytest.raises(ValueError, match="path separators"):
             camera.start_recording("subdir/test.mp4")
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_start_recording_rejects_traversal(
         self,
         mock_picamera2,
@@ -271,7 +271,7 @@ class TestVideoRecording:
 class TestContextManager:
     """Tests for context manager functionality."""
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_context_manager_success(self, mock_picamera2):
         """Test using camera as context manager."""
         mock_cam = MagicMock()
@@ -282,8 +282,8 @@ class TestContextManager:
 
         mock_cam.close.assert_called()
 
-    @patch("nomon.camera.H264Encoder")
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.H264Encoder")
+    @patch("nomothetic.camera.Picamera2")
     def test_context_manager_with_recording(
         self,
         mock_picamera2,
@@ -305,7 +305,7 @@ class TestContextManager:
 class TestFrameGenerator:
     """Tests for frame streaming functionality."""
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_frame_generator_initialization(
         self,
         mock_picamera2,
@@ -328,7 +328,7 @@ class TestFrameGenerator:
         mock_cam.start.assert_called()
         mock_cam.create_video_configuration.assert_called()
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_frame_generator_not_initialized(
         self,
         mock_picamera2,
@@ -345,7 +345,7 @@ class TestFrameGenerator:
 class TestJPEGFrameGenerator:
     """Tests for JPEG frame streaming functionality."""
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_jpeg_frame_generator_initialization(
         self,
         mock_picamera2,
@@ -372,7 +372,7 @@ class TestJPEGFrameGenerator:
         mock_cam.start.assert_called()
         mock_cam.create_still_configuration.assert_called()
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_jpeg_frame_generator_not_initialized(
         self,
         mock_picamera2,
@@ -385,7 +385,7 @@ class TestJPEGFrameGenerator:
         with pytest.raises(RuntimeError):
             next(camera.get_jpeg_frame_generator())
 
-    @patch("nomon.camera.Picamera2")
+    @patch("nomothetic.camera.Picamera2")
     def test_jpeg_frame_generator_error_handling(
         self,
         mock_picamera2,

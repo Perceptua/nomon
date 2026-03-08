@@ -15,7 +15,7 @@ alongside the REST API.
 - **paho-mqtt >= 2.0** — Eclipse Paho Python MQTT client (2.x API with `CallbackAPIVersion`)
 - **Python standard library** — `threading`, `json`, `socket`, `os` — no other new deps
 
-### `nomon.telemetry` — `TelemetryPublisher`
+### `nomothetic.telemetry` — `TelemetryPublisher`
 
 | Feature | Description |
 |---------|-------------|
@@ -33,7 +33,7 @@ alongside the REST API.
 {
   "device_id": "pi-deadbeef",
   "timestamp": "2026-03-03T11:23:17.638000+00:00",
-  "nomon_version": "0.1.0",
+  "nomothetic_version": "0.1.0",
   "camera": {
     "ready": true,
     "recording": false,
@@ -60,7 +60,7 @@ alongside the REST API.
 
 ## Implementation Details
 
-### Source (`src/nomon/telemetry.py`)
+### Source (`src/nomothetic/telemetry.py`)
 
 - ~310 lines of production code
 - Full NumPy-style docstrings and type hints
@@ -84,7 +84,7 @@ alongside the REST API.
 - `publish_now()` — success, connection failure, skip-connect-when-connected
 - Exponential back-off logic (first delay = `_BACKOFF_BASE`; cap at `_BACKOFF_CAP`)
 - `ImportError` raised when paho-mqtt not installed
-- Package-level `nomon.TelemetryPublisher` export
+- Package-level `nomothetic.TelemetryPublisher` export
 
 **Test totals: 86 passing (20 camera + 14 streaming + 26 API + 3 integration + 23 telemetry)**
 
@@ -103,7 +103,7 @@ alongside the REST API.
 ### Basic Setup
 
 ```python
-from nomon.telemetry import TelemetryPublisher
+from nomothetic.telemetry import TelemetryPublisher
 
 pub = TelemetryPublisher(broker="192.168.1.100")
 thread = pub.start_background()
@@ -117,8 +117,8 @@ thread.join()
 ### With Camera Status
 
 ```python
-from nomon.camera import Camera
-from nomon.telemetry import TelemetryPublisher
+from nomothetic.camera import Camera
+from nomothetic.telemetry import TelemetryPublisher
 
 camera = Camera()
 pub = TelemetryPublisher(broker="192.168.1.100", camera=camera)
@@ -138,7 +138,7 @@ NOMON_DEVICE_ID=pi-lab-01
 
 ```python
 from dotenv import load_dotenv
-from nomon.telemetry import TelemetryPublisher
+from nomothetic.telemetry import TelemetryPublisher
 
 load_dotenv()
 pub = TelemetryPublisher.from_env()
@@ -191,9 +191,11 @@ brief outages.
 
 ## What's Next
 
-### Phase 4 — OTA Update Mechanism
+### Phase 5 — HAT Module Driver (Rust)
 
-- `nomon.updater` module
-- `GET /api/system/version` endpoint
-- Version manifest polling + `git pull` + systemd restart
-- SHA-256 checksum verification
+See [docs/phase5_planning.md](phase5_planning.md) for the full plan.
+
+- `nomopractic` Rust daemon: I2C, ADC, battery voltage, PWM, servo angle
+- `nomothetic.hat.HatClient`: typed Python IPC client
+- `GET /api/hat/battery` and `POST /api/hat/servo` REST endpoints
+- Mock-socket tests requiring no hardware

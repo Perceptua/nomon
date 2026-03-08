@@ -50,7 +50,7 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 
 ### Project Structure
 - **tests/** directory with example test
-- **src/nomon/__init__.py** - Package initialization with version metadata
+- **src/nomothetic/__init__.py** - Package initialization with version metadata
 - **Makefile** - Common development commands:
   - `make install-dev` - Install with dev dependencies
   - `make test` - Run tests with coverage
@@ -76,7 +76,7 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 
 ### Phase 1: Raspberry Pi Camera Module ✅ COMPLETE
 
-**Camera Implementation** (`src/nomon/camera.py`)
+**Camera Implementation** (`src/nomothetic/camera.py`)
 - ✅ Still image capture via `capture_image(filename)`
 - ✅ Video recording via `start_recording(filename)` / `stop_recording()`
 - ✅ Live streaming via `get_frame_generator()` 
@@ -128,7 +128,7 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 - ✅ HTML viewer page with responsive CSS
 - ✅ Documentation and usage examples in SETUP.md
 
-**StreamServer Class** (`src/nomon/streaming.py`)
+**StreamServer Class** (`src/nomothetic/streaming.py`)
 - Access at `http://localhost:8000` (default, configurable)
 - Endpoints:
   - `GET /` - HTML page with live stream viewer
@@ -162,7 +162,7 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 
 **Dependencies**
 - Flask >= 2.0 in `[web]` optional dependencies
-- Installation: `pip install nomon[web]` or `uv add ".[web]"`
+- Installation: `pip install nomothetic[web]` or `uv add ".[web]"`
 - Not required for core camera functionality
 
 **Rationale**
@@ -179,7 +179,7 @@ Scripts for Raspberry Pi microcontroller & peripherals with HAT (Hardware Attach
 
 ### Phase 2: HTTP REST API & Authentication ✅ COMPLETE
 
-**REST API Implementation** (`src/nomon/api.py`)
+**REST API Implementation** (`src/nomothetic/api.py`)
 - ✅ FastAPI-based REST server with automatic OpenAPI documentation
 - ✅ HTTPS/TLS support with self-signed certificate generation
 - ✅ CORS middleware for web and mobile client compatibility
@@ -233,7 +233,7 @@ Errors use standard HTTP status codes:
 
 **Usage Example**
 ```python
-from nomon.api import APIServer
+from nomothetic.api import APIServer
 
 # Start HTTPS API server
 server = APIServer(
@@ -248,7 +248,7 @@ server.run()  # Blocking call
 
 Or run in background:
 ```python
-from nomon.api import APIServer
+from nomothetic.api import APIServer
 
 server = APIServer()
 thread = server.start_background()
@@ -294,7 +294,7 @@ For production deployment:
 ### Using the Camera Module
 ```python
 from pathlib import Path
-from nomon.camera import Camera
+from nomothetic.camera import Camera
 
 # Initialize with custom directory
 camera = Camera(
@@ -325,7 +325,7 @@ with Camera() as cam:
 
 ### Using the Web Streaming Server
 ```python
-from nomon.streaming import StreamServer
+from nomothetic.streaming import StreamServer
 
 # Start streaming server
 server = StreamServer(
@@ -343,7 +343,7 @@ server.start()  # This blocks until server is stopped (Ctrl+C)
 
 Or run in background:
 ```python
-from nomon.streaming import StreamServer
+from nomothetic.streaming import StreamServer
 
 server = StreamServer()
 thread = server.start_background()
@@ -355,7 +355,7 @@ server.close()  # Clean up when done
 
 ### Using the REST API Server
 ```python
-from nomon.api import APIServer
+from nomothetic.api import APIServer
 
 # Start HTTPS REST API server (self-signed cert auto-generated)
 server = APIServer(
@@ -375,7 +375,7 @@ server.run()  # Blocking call (Ctrl+C to stop)
 
 Or run in background:
 ```python
-from nomon.api import APIServer
+from nomothetic.api import APIServer
 
 server = APIServer(host="0.0.0.0")  # Listen on all interfaces
 thread = server.start_background()

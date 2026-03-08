@@ -53,7 +53,7 @@ Error responses use standard HTTP status codes:
 
 ## Implementation Details
 
-### FastAPI Setup (`src/nomon/api.py`)
+### FastAPI Setup (`src/nomothetic/api.py`)
 - **499 lines** of production code
 - **Full type hints** and docstrings
 - **Clean architecture** with request/response models
@@ -84,7 +84,7 @@ Error responses use standard HTTP status codes:
 
 ### Start the API Server
 ```python
-from nomon.api import APIServer
+from nomothetic.api import APIServer
 
 # HTTPS with auto-generated self-signed certificates
 server = APIServer(

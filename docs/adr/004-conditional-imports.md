@@ -12,7 +12,7 @@ Several dependencies (`picamera2`, `spidev`, `pigpio`) only work on Raspberry Pi
 
 1. **`try/except ImportError` at module level, set symbol to `None`** — module is always importable; error raised at instantiation
 2. **Platform guard at import time** (`if sys.platform == "linux"`)  — imports unconditionally fail on Windows
-3. **Separate subpackages** (`nomon.pi.camera`) — adds complexity, breaks simple imports
+3. **Separate subpackages** (`nomothetic.pi.camera`) — adds complexity, breaks simple imports
 4. **Stub/mock fallback implementations** — maintains API but masks real hardware errors
 
 ## Decision
@@ -33,8 +33,8 @@ class Camera:
 
 ## Rationale
 
-- `import nomon` and `import nomon.camera` succeed on all platforms — test files can import the module without hardware
-- Tests mock the symbols at the point where the module imported them: `@patch("nomon.camera.Picamera2")`
+- `import nomothetic` and `import nomothetic.camera` succeed on all platforms — test files can import the module without hardware
+- Tests mock the symbols at the point where the module imported them: `@patch("nomothetic.camera.Picamera2")`
 - The error is raised at the right time (instantiation) with a clear message
 - `pyproject.toml` marks `picamera2` and `spidev` as `sys_platform == 'linux'` conditional dependencies — they are never installed on Windows
 

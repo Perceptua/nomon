@@ -1,14 +1,14 @@
-# nomon-hat Rust Crate Structure
+# nomopractic Rust Crate Structure
 
 ## Overview
 
-`nomon-hat` is a standalone Rust daemon that owns all hardware access on the
+`nomopractic` is a standalone Rust daemon that owns all hardware access on the
 Raspberry Pi: I2C, PWM, ADC, GPIO, and UART. It runs as a systemd service
-and exposes a Unix domain socket IPC API consumed by the Python `nomon` package
+and exposes a Unix domain socket IPC API consumed by the Python `nomothetic` package
 (see [hat_ipc_schema.md](hat_ipc_schema.md)).
 
 This document describes the planned crate layout, module responsibilities,
-dependency choices, and configuration options. The `nomon-hat` repository does
+dependency choices, and configuration options. The `nomopractic` repository does
 not exist yet; this document guides its initial scaffolding when Phase 5 begins.
 
 ---
@@ -16,7 +16,7 @@ not exist yet; this document guides its initial scaffolding when Phase 5 begins.
 ## Repository Layout
 
 ```
-nomon-hat/                        ← Separate git repository
+nomopractic/                        ← Separate git repository
 ├── Cargo.toml                    ← Workspace root (optional) or crate root
 ├── Cargo.lock
 ├── README.md
@@ -42,7 +42,7 @@ nomon-hat/                        ← Separate git repository
 │   │   └── gpio.rs               ← Named GPIO pins (D4-BCM23, MCURST-BCM5, …)
 │   └── reset.rs                  ← MCU reset procedure
 ├── systemd/
-│   └── nomon-hat.service         ← systemd unit file
+│   └── nomopractic.service         ← systemd unit file
 ├── scripts/
 │   └── deploy.sh                 ← OTA binary deploy (download + SHA256 + atomic swap)
 └── tests/
@@ -71,13 +71,13 @@ allows future embedding in other Rust binaries (e.g., a test harness).
 Loads configuration from (in priority order):
 1. Command-line arguments (`--i2c-bus`, `--socket-path`, etc.)
 2. Environment variables (`NOMON_HAT_*`)
-3. Config file at `/etc/nomon-hat/config.toml` (optional)
+3. Config file at `/etc/nomopractic/config.toml` (optional)
 
 ```rust
 pub struct Config {
     pub i2c_bus: u8,                   // default: 1
     pub hat_address: u8,               // default: 0x14
-    pub socket_path: PathBuf,          // default: /run/nomon-hat/nomon-hat.sock
+    pub socket_path: PathBuf,          // default: /run/nomopractic/nomopractic.sock
     pub socket_mode: u32,              // default: 0o660
     pub log_level: String,             // default: "info"
     pub servo_default_ttl_ms: u64,     // default: 500
@@ -268,18 +268,18 @@ tempfile = "3"
 |----------|---------|-------------|
 | `NOMON_HAT_I2C_BUS` | `1` | Linux I2C bus number |
 | `NOMON_HAT_ADDRESS` | `0x14` | Robot HAT I2C device address |
-| `NOMON_HAT_SOCKET_PATH` | `/run/nomon-hat/nomon-hat.sock` | Unix socket path |
+| `NOMON_HAT_SOCKET_PATH` | `/run/nomopractic/nomopractic.sock` | Unix socket path |
 | `NOMON_HAT_SOCKET_MODE` | `0660` | Socket file permissions (octal) |
 | `NOMON_HAT_LOG_LEVEL` | `info` | Log level (`trace`, `debug`, `info`, `warn`, `error`) |
 | `NOMON_HAT_SERVO_DEFAULT_TTL_MS` | `500` | Default servo lease TTL in milliseconds |
 | `NOMON_HAT_WATCHDOG_POLL_MS` | `100` | TTL watchdog polling interval in milliseconds |
 
-### Config File (`/etc/nomon-hat/config.toml`)
+### Config File (`/etc/nomopractic/config.toml`)
 
 ```toml
 i2c_bus = 1
 hat_address = 0x14
-socket_path = "/run/nomon-hat/nomon-hat.sock"
+socket_path = "/run/nomopractic/nomopractic.sock"
 socket_mode = 0o660
 log_level = "info"
 servo_default_ttl_ms = 500
@@ -288,7 +288,7 @@ watchdog_poll_ms = 100
 
 ---
 
-## systemd Unit (`systemd/nomon-hat.service`)
+## systemd Unit (`systemd/nomopractic.service`)
 
 ```ini
 [Unit]
@@ -299,10 +299,10 @@ After=network.target
 Type=simple
 User=root
 Group=nomon
-ExecStart=/usr/local/bin/nomon-hat --config /etc/nomon-hat/config.toml
+ExecStart=/usr/local/bin/nomopractic --config /etc/nomopractic/config.toml
 Restart=on-failure
 RestartSec=2s
-RuntimeDirectory=nomon-hat
+RuntimeDirectory=nomopractic
 RuntimeDirectoryMode=0755
 
 [Install]
@@ -313,7 +313,7 @@ WantedBy=multi-user.target
 
 ## Cross-Compilation (CI)
 
-The nomon-hat CI workflow cross-compiles for `aarch64-unknown-linux-gnu` using
+The nomopractic CI workflow cross-compiles for `aarch64-unknown-linux-gnu` using
 the [`cross`](https://github.com/cross-rs/cross) tool:
 
 ```yaml
@@ -331,7 +331,7 @@ in the OTA job document (Phase 6).
 
 ## First Milestone Scope
 
-For the initial `nomon-hat` v0.1.0 release, implement only:
+For the initial `nomopractic` v0.1.0 release, implement only:
 
 | Module | Priority | Notes |
 |--------|----------|-------|

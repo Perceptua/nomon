@@ -40,15 +40,15 @@ clarify callback signatures and deprecated legacy positional arguments.
 - **No async requirement** — nomon telemetry uses a daemon background thread,
   not an async event loop, so a synchronous client is appropriate.
 - **Minimal footprint** — paho-mqtt has no transitive dependencies.
-- **Conditional import** — follows the existing pattern from `nomon.camera`
-  (picamera2) and `nomon.streaming` (Flask): the module is importable without
+- **Conditional import** — follows the existing pattern from `nomothetic.camera`
+  (picamera2) and `nomothetic.streaming` (Flask): the module is importable without
   paho-mqtt installed; `ImportError` is raised at instantiation only.
 
 ## Consequences
 
 - A new `[telemetry]` optional dependency group is added to `pyproject.toml`.
 - `paho-mqtt` is also added to `[dev]` so tests run without a separate install step.
-- Tests mock `nomon.telemetry.mqtt` via `unittest.mock.patch` — no real broker
+- Tests mock `nomothetic.telemetry.mqtt` via `unittest.mock.patch` — no real broker
   is required during testing; all 86 tests pass on Windows without a Pi.
 - The 2.x callback API (`CallbackAPIVersion.VERSION2`) is used throughout;
   the 1.x positional callback style is not supported.

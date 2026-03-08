@@ -36,7 +36,7 @@ class TelemetryPublisher:
 
     Runs as a daemon background thread.  Handles broker unavailability
     with exponential back-off reconnect logic.  The publisher is fully
-    independent of ``nomon.api`` — start it alongside the API server at
+    independent of ``nomothetic.api`` — start it alongside the API server at
     application startup.
 
     Parameters
@@ -86,7 +86,7 @@ class TelemetryPublisher:
         if mqtt is None:
             raise ImportError(
                 "paho-mqtt is required for telemetry. "
-                "Install with: pip install 'nomon[telemetry]'"
+                "Install with: pip install 'nomothetic[telemetry]'"
             )
 
         self.broker = broker
@@ -237,7 +237,7 @@ class TelemetryPublisher:
             Payload with device ID, timestamp, nomon version, and
             optional camera status.
         """
-        from nomon import __version__
+        from nomothetic import __version__
 
         camera_data: Optional[dict[str, Any]] = None
         if self.camera is not None:

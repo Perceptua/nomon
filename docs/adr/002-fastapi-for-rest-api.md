@@ -17,7 +17,7 @@ The nomon REST API needs an HTTP framework. The project already uses Flask for `
 
 ## Decision
 
-Use **FastAPI** for the REST API (`nomon.api`), while retaining Flask for the MJPEG stream server.
+Use **FastAPI** for the REST API (`nomothetic.api`), while retaining Flask for the MJPEG stream server.
 
 ## Rationale
 
